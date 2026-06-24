@@ -1057,7 +1057,7 @@ struct token
     }
 
     ///Cut left token up to specified character delimiter
-    token cut_left(char c, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left(char c, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = strchr(c);
@@ -1070,7 +1070,7 @@ struct token
     }
 
     ///Cut left token up to specified character delimiters
-    token cut_left(char c1, char c2, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left(char c1, char c2, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = strchr2(c1, c2);
@@ -1083,7 +1083,7 @@ struct token
     }
 
     ///Cut left token, up to a character from specified group of single characters as delimiters
-    token cut_left_group(const token& separators, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_group(const token& separators, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         if (separators.len() == 1)
             return cut_left(separators.first_char(), ctr);
@@ -1104,7 +1104,7 @@ struct token
 
     /// @param P a functor of type bool(char)
     template <typename P>
-    token cut_left_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = _ptr + count_not(predicate);
@@ -1120,13 +1120,13 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    token cut_left_group(char separator, cut_trait ctr = cut_trait_remove_sep_default_full()) {
+    token cut_left_group(char separator, cut_trait ctr = cut_trait_remove_sep_all_default_full()) {
         return cut_left(separator, ctr);
     }
 
     ///Cut left token up to the substring
     /// @param icase true if case should be ignored
-    token cut_left(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = _ptr + count_until_substring(ss, icase);
@@ -1141,7 +1141,7 @@ struct token
     }
 
     ///Cut left token up to the substring
-    token cut_left(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = _ptr + count_until_substring(ss);
@@ -1156,7 +1156,7 @@ struct token
     }
 
     ///Cut left substring, searching for separator backwards
-    token cut_left_back(const char c, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_back(const char c, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         const char* p = strrchr(c);
@@ -1170,7 +1170,7 @@ struct token
     }
 
     ///Cut left substring, searching backwards for a character from specified group of single characters as delimiters
-    token cut_left_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         if (separators.len() == 1)
             return cut_left_back(separators.first_char(), ctr);
@@ -1192,14 +1192,14 @@ struct token
             return ctr.process_notfound(*this, r);
     }
 
-    token cut_left_group_back(char separator, cut_trait ctr = cut_trait_remove_sep_default_full()) {
+    token cut_left_group_back(char separator, cut_trait ctr = cut_trait_remove_sep_all_default_full()) {
         return cut_left_back(separator, ctr);
     }
 
     ///Cut left substring, searching backwards for a character that satisfies delimiter predicate
     /// @param P a functor of type bool(char)
     template <typename P>
-    token cut_left_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         uints off = count_not(predicate);
@@ -1220,7 +1220,7 @@ struct token
 
     ///Cut left token, searching for a substring separator backwards
     /// @param icase true if case should be ignored
-    token cut_left_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         uints off = 0;
@@ -1247,7 +1247,7 @@ struct token
     }
 
     ///Cut left token, searching for a substring separator backwards
-    token cut_left_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_left_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         token r;
         uints off = 0;
@@ -1275,72 +1275,72 @@ struct token
 
 
     ///Cut right token, searching for specified character delimiter
-    token cut_right(const char c, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right(const char c, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left(c, ctr.make_swap());
     }
 
     ///Cut right token, searching for a character from specified group of single characters as delimiters
-    token cut_right_group(const token& separators, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_group(const token& separators, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_group(separators, ctr.make_swap());
     }
 
-    token cut_right_group(char separator, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_group(char separator, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_right(separator, ctr);
     }
 
     /// @param P a functor of type bool(char)
     template <typename P>
-    token cut_right_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_predicate(P predicate, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_predicate(predicate, ctr.make_swap());
     }
 
     ///Cut right token up to the specified substring
-    token cut_right(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left(ss, icase, ctr.make_swap());
     }
 
     ///Cut right token up to the specified substring
-    token cut_right(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left(ss, ctr.make_swap());
     }
 
     ///Cut right token, searching for the specified character separator backwards
-    token cut_right_back(const char c, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_back(const char c, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_back(c, ctr.make_swap());
     }
 
     ///Cut right token, searching backwards for a character from specified group of single characters as delimiters
-    token cut_right_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_group_back(const token& separators, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_group_back(separators, ctr.make_swap());
     }
 
-    token cut_right_group_back(char separator, cut_trait ctr = cut_trait_remove_sep_default_full()) {
+    token cut_right_group_back(char separator, cut_trait ctr = cut_trait_remove_sep_all_default_full()) {
         return cut_right_back(separator, ctr);
     }
 
     /// @param P a functor of type bool(char)
     template <typename P>
-    token cut_right_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_predicate_back(P predicate, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_predicate_back(predicate, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_back(const token& ss, bool icase, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_back(ss, icase, ctr.make_swap());
     }
 
     ///Cut right substring, searching for separator backwards
-    token cut_right_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_default_full())
+    token cut_right_back(const class substring& ss, cut_trait ctr = cut_trait_remove_sep_all_default_full())
     {
         return cut_left_back(ss, ctr.make_swap());
     }
