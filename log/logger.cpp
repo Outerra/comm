@@ -282,6 +282,8 @@ public:
         if (_stdout)
             write_console_text(lm);
     }
+
+    const coid::charstr& get_file_path() const { return _logpath; }
 };
 
 } //namespace coid
@@ -497,6 +499,12 @@ void logger::open(const token& filename)
         _logfile = ref<logger_file>(new logger_file(_stdout));
 
     _logfile->open(filename, _stdout);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+const coid::charstr& logger::get_logfile_path() const
+{
+    return _logfile->get_file_path();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

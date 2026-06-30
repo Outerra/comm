@@ -103,6 +103,8 @@ public:
 
     void open(const token& filename);
 
+    const coid::charstr& get_logfile_path() const;
+
     static void post(const token& msg, const token& from = token(), const void* inst = 0);
 
     bool is_running();
