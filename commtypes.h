@@ -408,3 +408,10 @@ COID_NAMESPACE_END
 #else
 #define COMM_ALIGNAS(k) __attribute__((__aligned__(k)))
 #endif
+
+#ifdef COID_CONCEPTS
+template<typename From, typename To>
+concept is_static_castable = requires(From from) {
+static_cast<To>(from);
+};
+#endif
