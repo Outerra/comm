@@ -134,9 +134,9 @@ public:
         swap(other);
     }
 
-    // constructor from inherited object
+    // constructor from castable object
     template< class T2 >
-        requires std::is_convertible_v<T2*, T*>
+    requires is_static_castable<T2*, T*>
     explicit ref(const ref<T2>& p)
         : _p(p.add_refcount())
         , _o(static_cast<T*>(p.get())) {}
