@@ -53,7 +53,9 @@ template <class T>
 class unique_ptr
 {
     T* _p = nullptr;
+
 public:
+
     unique_ptr() {}
     ~unique_ptr() { if (_p) { delete _p; } }
 
@@ -110,6 +112,7 @@ public:
     {
         if (_p) {
             delete _p;
+            _p = nullptr;
         }
         swap(p);
         return *this;
