@@ -468,10 +468,10 @@ opcd directory::delete_file(zstring src)
 ////////////////////////////////////////////////////////////////////////////////
 opcd directory::delete_directory(zstring src, bool recursive)
 {
-    opcd was_err;
+    opcd was_err = NOERR;
 
     if (recursive) {
-        list_file_paths(src, "*", recursion_mode::recursive_dirs_enter, [&was_err](const charstr& path, list_entry type) {
+        list_file_paths(src, "*", recursion_mode::recursive_dirs_exit, [&was_err](const charstr& path, list_entry type) {
             opcd err = type != list_entry::file
                 ? delete_directory(path, false)
                 : delete_file(path);

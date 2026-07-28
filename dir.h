@@ -219,15 +219,68 @@ public:
 
     static opcd delete_directory(zstring src, bool recursive);
 
-    ///Move directories or files, also works across drives
-    /// @note will fail if src file already exists in dst
-    static opcd move_directory(zstring source, zstring destination) 
+    /// @brief Specifies how a directory move operation handles the target path.
+    enum class move_directory_mode_enum
     {
-        if (!is_valid_directory(source) || !is_valid_directory(destination))
-        {
+        move_to,    ///< Moves the source directory into the target directory.
+                    ///< @example src: "X:/src/", dst: "X:/dst/" -> result: "X:/dst/src/"
+        rename      ///< Moves and renames the source directory to match the target path.
+                    ///< @example src: "X:/src/", dst: "X:/dst/" -> result: "X:/dst/"
+    };
+
+    /// @brief Moves a directory to a new location, including across disk volumes.
+    ///
+    /// @param source Path to the source directory.
+    /// @param destination Path to the destination directory.
+    /// @param mode Operation mode (@see move_directory_mode_enum).
+    ///
+    /// @return `opcd` Error code indicating success or the specific cause of failure.
+    ///
+    /// @note **Mode Behavior & Failure Cases:**
+    /// - @ref move_directory_mode_enum::move_to "move_to":
+    ///   Fails if either @p source or @p destination is not a valid directory, or if
+    ///   @p destination already contains a directory with the same name as @p source.
+    /// - @ref move_directory_mode_enum::rename "rename":
+    ///   Fails if @p source is not a valid directory, or if the @p destination path already exists.
+    static opcd move_directory(zstring source, zstring destination, move_directory_mode_enum mode)
+    {
+        if (!is_valid_directory(source))
             return ersINVALID_PARAMS;
+
+        if (mode == move_directory_mode_enum::move_to && !is_valid_directory(destination))
+            return ersINVALID_PARAMS;
+
+        if (mode == move_directory_mode_enum::rename && is_valid_directory(destination))
+            return ersALREADY_EXISTS;
+
+        coid::charstr& src_str = source.get_str();
+        coid::charstr& dst_str = destination.get_str();
+
+        if (mode == move_directory_mode_enum::move_to)
+        {
+            //src without trailing separator, dst with trailing separator
+            //-> copymove_directory moves the whole src dir into dst/<srcname>/
+            treat_trailing_separator(src_str, false);
+            treat_trailing_separator(dst_str, '/');
+
+            coid::charstr check = dst_str;
+            check << get_path_component(source.get_token());
+
+            if (is_valid_directory(check))
+                return ersALREADY_EXISTS;
         }
-        
+        else if (mode == move_directory_mode_enum::rename)
+        {
+            //neither src nor dst have a trailing separator
+            //-> copymove_directory moves/renames src directly into dst
+            treat_trailing_separator(src_str, false);
+            treat_trailing_separator(dst_str, false);
+        }
+        else
+        {
+            DASSERT_RETX(0, "Not implemented. New move_directory_mode_enum value added?", ersFAILED_ASSERTION);
+        }
+
         return copymove_directory(source, destination, true);
     }
 
