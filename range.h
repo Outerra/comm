@@ -82,6 +82,11 @@ public:
         : _ptr(ptr), _pte(ptre)
     {}
 
+    template <int N>
+    coid_constexpr_for range(T(&ptr)[N])
+        : _ptr(ptr), _pte(ptr + N)
+    {}
+
     range(const range& src) : _ptr(src._ptr), _pte(src._pte)
     {}
 
