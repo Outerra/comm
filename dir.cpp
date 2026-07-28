@@ -904,54 +904,69 @@ uint64 directory::calculate_directory_size(const coid::token& path)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-coid::token directory::get_path_component(const coid::token& path, int32 component)
+coid::token directory::get_path_component(const coid::token& path, coid::token* remainder_out, path_component_enum component)
 {
+    DASSERTX(verify_path_syntax(path) != verify_path_syntax_result_enum::invalid, "get_path_component: path is not a valid (non-empty) path. The result is undefined.");
 
-    const uint path_len = path.len();
-    
-    if (path_len < 2)
+#ifndef SYSTYPE_WIN
+
+    //a path made up entirely of separator(s) - the POSIX root "/", or a run like "///" - has no
+    // component to peel off. By convention (matching POSIX dirname()/basename(), where both
+    // dirname("/") and basename("/") return "/") the extracted component and the remainder are
+    // both the root itself, for either `first` or `last`.
+    if (path.count_ingroup(separators()) == path.len())
     {
-        return coid::token();
+        if (remainder_out) *remainder_out = path;
+        return path;
     }
-    
+#endif // end of SYSTYPE_WIN
+    const uint path_len = path.len();
+
+    //DOS drive letters ("C:", "C:\\") only exist on Windows; on other systems a leading
+    // "x:" is just an ordinary (if unusual) path segment, not a drive
+#ifdef SYSTYPE_WIN
     const bool is_dos_drive = path_len > 1 && path_len <= 3 && path[1] == ':';
-    const bool is_last_sep = (path_len > 2) && (path.last_char() == '\\' || path.last_char() == '/');
-    
+#else
+    const bool is_dos_drive = false;
+#endif // end of SYSTYPE_WIN
+
+    //use is_separator() rather than a hardcoded '\\'/'/' check: on non-Windows systems
+    // backslash is a perfectly ordinary filename character, not a path separator
+    const bool is_last_sep = (path_len > 1) && is_separator(path.last_char());
+
     if (is_dos_drive)
     {
         if (path_len == 2)
         {
-            return path;
+            //capture the result before touching remainder_out, in case it aliases path
+            coid::token result = path;
+            if (remainder_out) *remainder_out = coid::token();
+            return result;
         }
         else if (is_last_sep)
         {
-            return path.shifted_end(-1);
+            coid::token result = path.shifted_end(-1);
+            if (remainder_out) *remainder_out = coid::token();
+            return result;
         }
         else // invalid -> seems like drive but with unexpected 3rd char (should be dir separator)
         {
+            if (remainder_out) *remainder_out = coid::token();
             return coid::token();
         }
     }
     else
     {
-        const bool reverse = component < 0;
-
-        if (reverse)
-        {
-            component = -(component + 1);
-        }
-
         coid::token tok(is_last_sep ? path.shifted_end(-1) : path);
         coid::token result;
 
-         while (tok.is_set() && component >= 0)
-         {
-             result = reverse ? tok.cut_right_group_back(DIR_SEPARATORS) : tok.cut_left_group(DIR_SEPARATORS);
-             --component;
-         }
+        result = component == path_component_enum::last
+            ? tok.cut_right_group_back(separators(), coid::token::cut_trait_keep_sep_with_source_default_full())
+            : tok.cut_left_group(separators());
+
+        if (remainder_out) *remainder_out = tok;
         return result;
     }
-
 }
 
 COID_NAMESPACE_END

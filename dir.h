@@ -103,9 +103,9 @@ public:
     static const char* separator_str();
 
 #ifdef SYSTYPE_WIN
-    static const token& separators() { static token sep = "/\\"_T; return sep; }
+    static constexpr token_literal separators() { constexpr token_literal sep = "/\\"_T; return sep; }
 #else
-    static const token& separators() { static token sep = "/"_T; return sep; }
+    static constexpr token_literal separators() { constexpr token_literal sep = "/"_T; return sep; }
 #endif
 
     /// @param shouldbe true or one of / or \ characters if path should end with the separator, false if path separator should not be there
@@ -574,11 +574,59 @@ public:
     /// @return true when path is valid and writable directory, false otherwise
     static bool is_directory_writable(const coid::token& directory_path);
 
+    /// @brief Specifies which path component to extract.
+    enum class path_component_enum
+    {
+        first,  ///< Extract the first path component (leftmost segment).
+        last    ///< Extract the last path component (rightmost segment).
+    };
 
-    /// @brief Get's the last component of the path
-    /// @param path 
-    /// @return 
-    static coid::token get_path_component(const coid::token& path, int32 component = -1);
+    /// @brief Extracts the first or last path component and optionally retrieves the remaining path.
+    /// @param[in]  path          Input path (absolute or relative).
+    /// @param[out] remainder_out Optional pointer to receive the remaining path after removing the extracted component.
+    ///                           - **`path_component_enum::first`:** Strips the leading separator from the remainder.
+    ///                           - **`path_component_enum::last`:** Preserves the trailing separator on the remainder.
+    ///                           Pass `&path` to perform an in-place update.
+    /// @param[in]  component     Specifies whether to extract the `first` or `last` component.
+    ///                           Defaults to `path_component_enum::last`.
+    ///
+    /// @return The extracted path component, or an empty token if @p path is not a valid (non-empty) path.
+    ///
+    /// @pre @p path must not be empty; violating this asserts (DASSERTX) in debug builds. The call
+    ///      does not short-circuit, but still produces a well-defined (empty) result either way,
+    ///      via the same handling used for an all-separator path.
+    ///
+    /// @note **In-Place Modification:** @p path and @p remainder_out can safely reference
+    ///       the exact same object (e.g., `get_path_component(p, &p)`).
+    ///
+    /// @note **Root path:** if @p path consists solely of separator character(s) (e.g. the POSIX
+    ///       root "/"), there is no component to peel off. Matching POSIX `dirname()`/`basename()`
+    ///       (both of which return "/" for input "/"), both the returned component and
+    ///       @p remainder_out are set to @p path unchanged, regardless of @p component.
+    ///
+    /// @example
+    ///   coid::token rem;
+    ///
+    ///   // Extract LAST: trailing separator stays attached to the remaining directory path
+    ///   auto last = get_path_component("foo/bar/baz.txt", &rem, path_component_enum::last);
+    ///   // last == "baz.txt", rem == "foo/bar/"
+    ///
+    ///   // Extract FIRST: leading separator is stripped from the remainder
+    ///   auto first = get_path_component("foo/bar/baz.txt", &rem, path_component_enum::first);
+    ///   // first == "foo", rem == "bar/baz.txt"
+    ///
+    ///   // Absolute path: the leading separator stays attached to the remainder, same as any other
+    ///   auto base = get_path_component("/a", &rem, path_component_enum::last);
+    ///   // base == "a", rem == "/"
+    ///
+    ///   // Root path: nothing to split, both sides come back as "/"
+    ///   auto root = get_path_component("/", &rem);
+    ///   // root == "/", rem == "/"
+    static coid::token get_path_component(
+        const coid::token& path,
+        coid::token* remainder_out = nullptr,
+        path_component_enum component = path_component_enum::last
+    );
 
 protected:
     static bool is_valid_name_char(char c)

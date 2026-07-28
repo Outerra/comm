@@ -576,7 +576,7 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
     token tok = path;
 
     const uint tlen = tok.len();
-    const bool is_abosolute = tlen >= 3 && tok[1] == ':';
+    const bool is_abosolute = tlen >= 2 && tok[1] == ':';
     const bool lastsep = is_separator(tok.last_char());
 
     if (is_abosolute)
@@ -588,8 +588,14 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
         {
             return verify_path_syntax_result_enum::invalid;
         }
-    }
 
+        // only drive is in the path
+        if (tok.is_empty())
+        {
+            return verify_path_syntax_result_enum::valid_absolue_directory_path;
+        }
+    }
+    
     cut = tok;
 
     while (cut.is_set())

@@ -357,11 +357,11 @@ bool directory::is_valid_name(const coid::token& file_name)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::is_valid_path(const coid::token& path)
+directory::verify_path_syntax_result_enum directory::verify_path_syntax(const coid::token& path)
 {
     DASSERTX(0, "not implemented!");
 
-    return false;
+    return verify_path_syntax_result_enum::invalid;
 }
 
 

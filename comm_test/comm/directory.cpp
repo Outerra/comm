@@ -370,9 +370,240 @@ void test_directory_move()
         "Cleanup: failed to remove temporary root directory for move tests");
 }
 
+void test_get_path_component()
+{
+    using coid::directory;
+
+    // --- default is `last`; remainder keeps the trailing separator attached, per the documented contract ---
+    {
+        coid::token remainder;
+        coid::token last = directory::get_path_component("foo/bar/baz.txt"_T, &remainder);
+        DASSERTX(last == "baz.txt"_T, "Last component should be the file name");
+        DASSERTX(remainder == "foo/bar/"_T, "Remainder for `last` should keep the trailing separator attached");
+    }
+
+    // --- `first`: remainder has its leading separator stripped ---
+    {
+        coid::token remainder;
+        coid::token first = directory::get_path_component("foo/bar/baz.txt"_T, &remainder, directory::path_component_enum::first);
+        DASSERTX(first == "foo"_T, "First component should be the leading segment");
+        DASSERTX(remainder == "bar/baz.txt"_T, "Remainder for `first` should not have a leading separator");
+    }
+
+    // --- backslash is only a separator on Windows; elsewhere it's an ordinary filename character ---
+#ifdef SYSTYPE_WIN
+    {
+        coid::token remainder;
+        coid::token last = directory::get_path_component("foo\\bar\\baz.txt"_T, &remainder);
+        DASSERTX(last == "baz.txt"_T, "Last component should be the file name (backslash separators)");
+        DASSERTX(remainder == "foo\\bar\\"_T, "Remainder should keep the trailing backslash separator");
+    }
+#else
+    {
+        // no '/' present, so the whole string is a single component; backslash must not split it
+        coid::token remainder;
+        coid::token last = directory::get_path_component("foo\\bar\\baz.txt"_T, &remainder);
+        DASSERTX(last == "foo\\bar\\baz.txt"_T, "Backslash should not act as a separator on non-Windows systems");
+        DASSERTX(remainder.is_empty(), "No '/' present, so there is nothing to split off into a remainder");
+    }
+#endif
+
+    // --- a path that already ends with a separator doesn't produce an empty last component ---
+    {
+        coid::token remainder;
+        coid::token last = directory::get_path_component("foo/bar/"_T, &remainder);
+        DASSERTX(last == "bar"_T, "Pre-existing trailing separator should not produce an empty last component");
+        DASSERTX(remainder == "foo/"_T, "Remainder should still end with a single separator");
+    }
+
+    // --- a path with a single component and no separator: `last` returns it whole, remainder is empty ---
+    {
+        coid::token remainder;
+        coid::token last = directory::get_path_component("baz.txt"_T, &remainder);
+        DASSERTX(last == "baz.txt"_T, "Single-component path should be returned whole for `last`");
+        DASSERTX(remainder.is_empty(), "Remainder should be empty when there is no separator to split on");
+    }
+
+    // --- remainder_out left null (default) should behave exactly as before, no crash ---
+    {
+        coid::token last = directory::get_path_component("foo/bar/baz.txt"_T);
+        DASSERTX(last == "baz.txt"_T, "Default call without remainder_out should still return the last component");
+    }
+
+    // --- in-place update: passing &path as remainder_out is safe, per the documented note ---
+    {
+        coid::token p = "foo/bar/baz.txt"_T;
+        coid::token last = directory::get_path_component(p, &p);
+        DASSERTX(last == "baz.txt"_T, "In-place call should still return the correct last component");
+        DASSERTX(p == "foo/bar/"_T, "In-place call should leave the aliased path holding the remainder");
+    }
+
+    {
+        coid::token p = "foo/bar/baz.txt"_T;
+        coid::token first = directory::get_path_component(p, &p, directory::path_component_enum::first);
+        DASSERTX(first == "foo"_T, "In-place call should still return the correct first component");
+        DASSERTX(p == "bar/baz.txt"_T, "In-place call should leave the aliased path holding the remainder");
+    }
+
+    // --- DOS drive paths only exist as a concept on Windows; elsewhere "C:" etc. are just
+    // ordinary (if unusual) filenames with no special drive handling ---
+
+    // "C:" happens to come out the same on both platforms: on Windows via the dedicated drive
+    // branch, on other systems because with no '/' present the whole thing is one opaque component
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("C:"_T, &remainder);
+        DASSERTX(comp == "C:"_T, "Bare \"C:\" should come back whole on any platform");
+        DASSERTX(remainder.is_empty(), "Remainder for a bare \"C:\" should be empty");
+    }
+
+#ifdef SYSTYPE_WIN
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("C:\\"_T, &remainder);
+        DASSERTX(comp == "C:"_T, "Drive path with trailing separator should return the drive token");
+        DASSERTX(remainder.is_empty(), "Remainder for a drive-with-separator path should be empty");
+    }
+
+#else
+    {
+        // no dedicated drive handling: "C:\" has no '/' in it, so it's a single opaque component
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("C:\\"_T, &remainder);
+        DASSERTX(comp == "C:\\"_T, "\"C:\\\\\" should be treated as an ordinary filename on non-Windows systems");
+        DASSERTX(remainder.is_empty(), "Remainder for \"C:\\\\\" should be empty on non-Windows systems");
+    }
+#endif
+
+    // --- DOS drive paths also support in-place aliasing (regression test: remainder_out must not be
+    // written before the drive token is captured, since it may point at the same object as `path`) ---
+    {
+        coid::token p = "C:"_T;
+        coid::token comp = directory::get_path_component(p, &p);
+        DASSERTX(comp == "C:"_T, "In-place bare drive path should still return the drive token");
+        DASSERTX(p.is_empty(), "In-place bare drive path should leave the aliased remainder empty");
+    }
+
+#ifdef SYSTYPE_WIN
+    {
+        coid::token p = "C:\\"_T;
+        coid::token comp = directory::get_path_component(p, &p);
+        DASSERTX(comp == "C:"_T, "In-place drive-with-separator path should still return the drive token");
+        DASSERTX(p.is_empty(), "In-place drive-with-separator path should leave the aliased remainder empty");
+    }
+#else
+    {
+        coid::token p = "C:\\"_T;
+        coid::token comp = directory::get_path_component(p, &p);
+        DASSERTX(comp == "C:\\"_T, "In-place \"C:\\\\\" should still come back whole on non-Windows systems");
+        DASSERTX(p.is_empty(), "In-place \"C:\\\\\" should leave the aliased remainder empty on non-Windows systems");
+    }
+#endif
+
+    // --- note: an empty path is an asserted precondition violation (see the DASSERTX guard at the
+    // top of get_path_component); it's still not exercised via a plain call here to avoid tripping
+    // the debug assertion during test runs, even though it wouldn't return, and would in fact still
+    // produce a well-defined (empty component, empty remainder) result via the root-only fallback.
+
+    // --- a single-character path is a valid one-component relative path, not a degenerate case ---
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a"_T, &remainder);
+        DASSERTX(comp == "a"_T, "Single-character relative path should be returned whole");
+        DASSERTX(remainder.is_empty(), "Remainder for a single-character path should be empty");
+    }
+
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a"_T, &remainder, directory::path_component_enum::first);
+        DASSERTX(comp == "a"_T, "Single-character relative path should be returned whole for `first` too");
+        DASSERTX(remainder.is_empty(), "Remainder for a single-character path should be empty");
+    }
+
+    // --- "a/": a single-character relative path with a trailing separator. The 2-char length must
+    // still be recognized as having a trailing separator (regression test for the is_last_sep floor) ---
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a/"_T, &remainder);
+        DASSERTX(comp == "a"_T, "Trailing separator on a single-character path should not swallow the component");
+        DASSERTX(remainder.is_empty(), "Remainder for \"a/\" should be empty, not the separator itself");
+    }
+
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a/"_T, &remainder, directory::path_component_enum::first);
+        DASSERTX(comp == "a"_T, "\"a/\" should yield \"a\" as the first component too");
+        DASSERTX(remainder.is_empty(), "Remainder for \"a/\" (first) should be empty");
+    }
+
+    // --- same, with a backslash separator (Windows-only; backslash isn't a separator elsewhere) ---
+#ifdef SYSTYPE_WIN
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a\\"_T, &remainder);
+        DASSERTX(comp == "a"_T, "Trailing backslash on a single-character path should not swallow the component");
+        DASSERTX(remainder.is_empty(), "Remainder for \"a\\\\\" should be empty");
+    }
+#else
+    {
+        // "a\" is a 2-char filename on non-Windows systems: no separator, nothing to split off
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("a\\"_T, &remainder);
+        DASSERTX(comp == "a\\"_T, "\"a\\\\\" should be treated as a single opaque filename on non-Windows systems");
+        DASSERTX(remainder.is_empty(), "Remainder for \"a\\\\\" should be empty on non-Windows systems");
+    }
+#endif
+
+    // --- the following exercise POSIX-style absolute paths rooted at a bare "/", with no drive
+    // letter or UNC prefix. That's not a well-formed Windows path, so these are POSIX-only ---
+#ifndef SYSTYPE_WIN
+    // --- absolute path "/a": the leading separator stays attached to the remainder, exactly like
+    // any other separator would (this already worked before the root-only fix below; locked in here) ---
+    {
+        coid::token remainder;
+        coid::token last = directory::get_path_component("/a"_T, &remainder);
+        DASSERTX(last == "a"_T, "basename(\"/a\") should be \"a\"");
+        DASSERTX(remainder == "/"_T, "dirname(\"/a\") should be the root \"/\", not empty");
+    }
+
+    // --- root path "/": nothing to split off. By convention (matching POSIX dirname()/basename(),
+    // which both return "/" for input "/"), the component and remainder are both "/", for either mode ---
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("/"_T, &remainder);
+        DASSERTX(comp == "/"_T, "get_path_component(\"/\") should return the root itself, not empty");
+        DASSERTX(remainder == "/"_T, "Remainder for the root path should also be \"/\"");
+    }
+
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("/"_T, &remainder, directory::path_component_enum::first);
+        DASSERTX(comp == "/"_T, "get_path_component(\"/\", first) should also return the root itself");
+        DASSERTX(remainder == "/"_T, "Remainder for the root path (first) should also be \"/\"");
+    }
+
+    // --- root path also supports in-place aliasing ---
+    {
+        coid::token p = "/"_T;
+        coid::token comp = directory::get_path_component(p, &p);
+        DASSERTX(comp == "/"_T, "In-place root path should still return \"/\"");
+        DASSERTX(p == "/"_T, "In-place root path should leave the aliased remainder as \"/\"");
+    }
+
+    // --- a run of separators with nothing else ("///") is also treated as a bare root, unchanged ---
+    {
+        coid::token remainder;
+        coid::token comp = directory::get_path_component("///"_T, &remainder);
+        DASSERTX(comp == "///"_T, "A path made up solely of separators should come back unchanged");
+        DASSERTX(remainder == "///"_T, "Remainder for an all-separator path should also come back unchanged");
+    }
+#endif //SYSTYPE_WIN
+}
+
 void run_directory_tests()
 {
     test_is_same_path();
     test_directory_delete();
     test_directory_move();
+    test_get_path_component();
 }
