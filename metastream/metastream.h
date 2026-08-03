@@ -102,6 +102,16 @@ Then using metastream class and one of the formatting streams to stream in/out t
 **/
 
 ////////////////////////////////////////////////////////////////////////////////
+
+///Resolves the type through which a value of type T is streamed.
+/// Normally identical to resolve_enum<T>, i.e. enums are streamed as their underlying integer
+/// type, but enums that have a metastream operator declared for them (see metastream::enum_class_type)
+/// are streamed through that operator instead.
+/// @note defined below the metastream class, since the detection requires a complete type
+template<class T>
+struct resolve_stream_enum;
+
+////////////////////////////////////////////////////////////////////////////////
 ///Base class for streaming structured data
 class metastream
 {
@@ -330,6 +340,104 @@ public:
         return *this;
     }
 
+    ///Define streaming scheme for an enum type, streamed as a string with the value name
+    /// @param v enum variable to read/write to
+    /// @param values array of the possible values
+    /// @param names array of names corresponding to the values array, terminated by a nullptr
+    /// @param defval value to use if the input string doesn't match any of the names
+    /// @note this is the type-level counterpart of member_enum, to be used from a metastream operator:
+    ///   friend metastream& operator || (metastream& m, my_enum& v) {
+    ///       static const my_enum values[] = {my_enum::a, my_enum::b};
+    ///       static const char* const names[] = {"a", "b", 0};
+    ///       return m.enum_class_type(v, values, names, my_enum::a);
+    ///   }
+    /// @note a value that has no name in the list is written as a decimal number, and such input
+    ///   is also accepted back, so that unnamed values survive a round trip
+    template<typename T>
+    metastream& enum_class_type(T& v, const T values[], const char* const names[], const T& defval)
+    {
+        static_assert(std::is_enum<T>::value, "enum_class_type can be used only with enum types");
+
+        if (_binw) {
+            if (!enum_name_from_value(v, values, names)) {
+                //no name for this value, write it as a number so that it isn't lost
+                DASSERT(0);     //enum value not found
+                _convbuf.append_num(10, (typename resolve_enum<T>::type)v);
+            }
+
+            *this || _convbuf;
+        }
+        else if (_binr) {
+            _convbuf.reset();
+            *this || _convbuf;
+
+            if (!_convbuf)
+                v = defval;     //nothing in the stream
+            else
+                enum_value_from_name(v, values, names, defval);
+        }
+        else {
+            //described as a string in the metadata
+            //note the streaming function has to correspond to the described type, since the
+            // descriptor is shared by all users of the type
+            _cur_stream_fn = &type_streamer<charstr>::fn;
+
+            charstr* s = 0;
+            *this || *s;
+        }
+
+        return *this;
+    }
+
+    ///Define streaming scheme for a flags enum type, streamed as a string with the or-ed value names
+    /// @param v enum variable to read/write to
+    /// @param values array of the possible values; put compound ones at the front if flag groups are to be matched first
+    /// @param names array of names corresponding to the values array, terminated by a nullptr
+    /// @param defval value to use if the input string doesn't match any of the names
+    /// @note this is the type-level counterpart of member_enum_flags, see enum_class_type
+    /// @note allowed separators on input are " ,;|", output will use space
+    /// @note requires the &, |=, &= and ~ operators to be defined for T
+    template<typename T>
+    metastream& enum_class_flags_type(T& v, const T values[], const char* const names[], const T& defval)
+    {
+        static_assert(std::is_enum<T>::value, "enum_class_flags_type can be used only with enum types");
+
+        if (_binw) {
+            if (v == T(0)) {
+                //no bits to match, look for a name given to the zero value
+                enum_name_from_value(v, values, names);
+            }
+            else if (!enum_flags_name_from_value(v, values, names)) {
+                //some bits have no flag matching them, write the value as a number
+                DASSERT(0);
+                _convbuf.reset();
+                (_convbuf << "0b").append_num(2, (typename resolve_enum<T>::type)v);
+            }
+
+            *this || _convbuf;
+        }
+        else if (_binr) {
+            _convbuf.reset();
+            *this || _convbuf;
+
+            if (!_convbuf)
+                v = defval;     //nothing in the stream
+            else
+                enum_flags_value_from_name(v, values, names, defval);
+        }
+        else {
+            //described as a string in the metadata
+            //note the streaming function has to correspond to the described type, since the
+            // descriptor is shared by all users of the type
+            _cur_stream_fn = &type_streamer<charstr>::fn;
+
+            charstr* s = 0;
+            *this || *s;
+        }
+
+        return *this;
+    }
+
     ///Define a member variable
     /// @param name variable name, used as a key in output formats
     /// @param v variable to read/write to
@@ -338,7 +446,7 @@ public:
     bool member(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*) & v;
             return true;
         }
 
@@ -357,7 +465,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -384,7 +492,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == static_cast<const T&>(defval)
-                ? 0 : (typename resolve_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -408,7 +516,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && (v.begin() == v.end())
-                ? 0 : (typename resolve_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -445,7 +553,7 @@ public:
             if (!v)
                 throw exception() << "null pointer";
 
-            *this || *(typename resolve_enum<TNC>::type*)v;
+            *this || *(typename resolve_stream_enum<TNC>::type*)v;
             return true;
         }
         else
@@ -466,7 +574,7 @@ public:
         typedef typename std::remove_const<T>::type TNC;
 
         if (streaming()) {
-            *this || *(typename resolve_enum<TNC>::type*)v;
+            *this || *(typename resolve_stream_enum<TNC>::type*)v;
             return true;
         }
         else
@@ -505,7 +613,7 @@ public:
                 raw_ptr ? (ints)raw_ptr - (ints)&v : -1,
                 fnptr, fncount, fnpush, fnextract
             ))
-                *this || *(typename resolve_enum<Telem>::type*)0;
+                *this || *(typename resolve_stream_enum<Telem>::type*)0;
         }
 
         return *this;
@@ -520,7 +628,7 @@ public:
     metastream& member_stream_default(const token& name, T& v)
     {
         if (streaming())
-            *this || (typename resolve_enum<T>::type&)v;
+            *this || (typename resolve_stream_enum<T>::type&)v;
         else {
             meta_variable<T>(name, &v);
             meta_cache_default_stream<T>(&v);
@@ -914,32 +1022,16 @@ public:
 
         if (_binw) {
             if (!cache_prepared() && !write_default && v == defval)
-                used = write_optional((const char**)0);
-            else {
-                int i = 0;
-                while (names[i] != 0 && !(values[i] == v))
-                    ++i;
-                used = write_optional(names[i] ? &names[i] : 0);
-            }
+                used = write_optional((const charstr*)0);
+            else
+                used = write_optional(enum_name_from_value(v, values, names) ? &_convbuf : 0);
         }
         else if (_binr) {
             used = read_optional(_convbuf);
-            if (used) {
-                int i = 0;
-                while (names[i] != 0 && _convbuf != names[i])
-                    ++i;
-                if (names[i]) {
-                    v = values[i];
-                }
-                else {
-                    error_enum_name(_convbuf);
-                    DASSERT(0); //enum name not found
-                    v = defval;
-                }
-            }
-            else {
+            if (used)
+                enum_value_from_name(v, values, names, defval);
+            else
                 v = defval;
-            }
         }
         else {
             meta_variable_optional<charstr>(name, (const charstr*)&v);
@@ -966,62 +1058,28 @@ public:
 
         if (_binw) {
             if (!cache_prepared() && !write_default && v == defval)
-                used = write_optional((const char**)0);
+                used = write_optional((const charstr*)0);
             else {
-                T rest = v;
-                _convbuf.reset();
-                while (rest != T(0)) {
-                    int i = 0;
-                    while (names[i] != 0 && T(values[i] & v) != values[i])
-                        ++i;
-                    if (names[i]) {
-                        if (_convbuf) _convbuf << ' ';
-                        _convbuf << names[i];
-                        rest &= ~values[i];
-                    }
-                    else {
-                        //still some bits set but no flags matching, write value as a number
-                        DASSERT(0);
-                        (_convbuf << "0b").append_num(2, (typename resolve_enum<T>::type)v);
-                    }
+                if (!enum_flags_name_from_value(v, values, names)) {
+                    //still some bits set but no flags matching, write value as a number
+                    DASSERT(0);
+                    _convbuf.reset();
+                    (_convbuf << "0b").append_num(2, (typename resolve_enum<T>::type)v);
                 }
                 used = write_optional(_convbuf ? &_convbuf : 0);
             }
         }
         else if (_binr) {
             used = read_optional(_convbuf);
-            if (used) {
-                if (_convbuf.char_is_number(0)) {
-                    //a numeric value for flags
-                    v = T(_convbuf.xtouint());
-                }
-                else {
-                    v = T(0);
-                    token input = _convbuf;
-                    input.trim();
-                    while (input) {
-                        token name = input.cut_left_group(" ,;|");
-                        int i = 0;
-                        while (names[i] != 0 && name != names[i])
-                            ++i;
-                        if (names[i]) {
-                            v |= values[i];
-                        }
-                        else {
-                            DASSERT(0); //enum name not found, ignored
-                        }
-                    }
-                }
-            }
-            else {
+            if (used)
+                enum_flags_value_from_name(v, values, names, defval);
+            else
                 v = defval;
-            }
         }
         else
             meta_variable_optional<charstr>(name, (const charstr*)&v);
 
         return used;
-
     }
 
     ///Define an obsolete member - not present in the object, ignored on output, but doesn't fail when present in the input stream
@@ -1096,7 +1154,7 @@ public:
     bool nonmember(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*) & v;
             return true;
         }
 
@@ -1115,7 +1173,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*) & v;
             used = true;
         }
         else if (_binr) {
@@ -1142,7 +1200,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1219,7 +1277,7 @@ public:
             if (!v)
                 throw exception() << "null pointer";
 
-            *this || *(typename resolve_enum<TNC>::type*)v;
+            *this || *(typename resolve_stream_enum<TNC>::type*)v;
         }
         else
             meta_variable_indirect<TNC>(name, -1);
@@ -1239,7 +1297,7 @@ public:
         typedef typename std::remove_const<T>::type TNC;
 
         if (streaming()) {
-            *this || *(typename resolve_enum<TNC>::type*)v;
+            *this || *(typename resolve_stream_enum<TNC>::type*)v;
             return true;
         }
         else
@@ -1256,7 +1314,7 @@ public:
     metastream& nonmember_stream_default(const token& name, T& v)
     {
         if (streaming())
-            *this || (typename resolve_enum<T>::type&)v;
+            *this || (typename resolve_stream_enum<T>::type&)v;
         else {
             meta_variable<T>(name, &v, true);
             meta_cache_default_stream<T>(&v);
@@ -1356,7 +1414,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if (e == NOERR) {
-            *this || *(typename resolve_enum<T>::type*) & val;
+            *this || *(typename resolve_stream_enum<T>::type*) & val;
             return true;
         }
         else {
@@ -1636,7 +1694,7 @@ private:
 
         if (!prepare_type_common(read))  return 0;
 
-        typename resolve_enum<T>::type* p = 0;
+        typename resolve_stream_enum<T>::type* p = 0;
         *this || *p;     // build description
 
         return prepare_type_final(name, cache, read);
@@ -1650,7 +1708,7 @@ private:
 
         if (!prepare_type_common(read))  return 0;
 
-        typename resolve_enum<T>::type* p = 0;
+        typename resolve_stream_enum<T>::type* p = 0;
         fn(*this, *p);     // build description
 
         return prepare_type_final(name, cache, read);
@@ -1678,7 +1736,7 @@ private:
         if (!prepare_type_common(read))  return 0;
 
         if (meta_decl_array(typeid(T[]).name(), -1, -1, false, 0, 0, 0, 0, n))
-            *this || *(typename resolve_enum<T>::type*)0;     // build description
+            *this || *(typename resolve_stream_enum<T>::type*)0;     // build description
 
         return prepare_type_final(name, cache, read);
     }
@@ -1861,7 +1919,7 @@ public:
         _xthrow(prepare_type(x, name, false, READ_MODE));
 
         _binr = true;
-        *this || (typename resolve_enum<T>::type&)x;
+        *this || (typename resolve_stream_enum<T>::type&)x;
         _binr = false;
     }
 
@@ -1876,11 +1934,11 @@ public:
     template<class T>
     void xstream_or_cache_out(const T& x, bool cache, const token& name = token())
     {
-        _xthrow(prepare_type((typename resolve_enum<T>::type&)x, name, cache, WRITE_MODE));
+        _xthrow(prepare_type((typename resolve_stream_enum<T>::type&)x, name, cache, WRITE_MODE));
 
         if (!cache) {
             _binw = true;
-            *this || (typename resolve_enum<T>::type&)x;
+            *this || (typename resolve_stream_enum<T>::type&)x;
             _binw = false;
         }
     }
@@ -1912,7 +1970,7 @@ public:
     template<class T>
     void xstream_or_cache_out_fn(const T& x, bool cache, metastream& (*fn)(metastream&, T&), const token& name = token())
     {
-        _xthrow(prepare_type_fn((typename resolve_enum<T>::type&)x, name, cache, WRITE_MODE, fn));
+        _xthrow(prepare_type_fn((typename resolve_stream_enum<T>::type&)x, name, cache, WRITE_MODE, fn));
 
         if (!cache) {
             _binw = true;
@@ -2250,7 +2308,7 @@ public:
     template<class T>
     void meta_variable(const token& varname, const T* v, bool nonmember = false)
     {
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
@@ -2263,7 +2321,7 @@ public:
     template<class T>
     void meta_variable_indirect(const token& varname, ints offs)
     {
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = down_cast<int>(offs);
@@ -2278,7 +2336,7 @@ public:
     template<class T>
     void meta_variable_raw_ptr(const token& varname, ints offs, bool streamed)
     {
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = down_cast<int>(offs);
@@ -2300,7 +2358,7 @@ public:
     void meta_variable_container(const token& varname, ints offs, ints raw_ptr_offs, bool streamed,
         MetaDesc::fn_ptr fnptr, MetaDesc::fn_count fncount, MetaDesc::fn_push fnpush, MetaDesc::fn_extract fnextract)
     {
-        typedef typename resolve_enum<Telem>::type B;
+        typedef typename resolve_stream_enum<Telem>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = down_cast<int>(offs);
@@ -2339,7 +2397,7 @@ public:
     template<size_t N, class T>
     void meta_variable_fixed_array(const token& varname, T* v, bool optional, bool nonmember = false)
     {
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
@@ -2371,7 +2429,7 @@ public:
     template<class T>
     void meta_variable_array(const token& varname, T* v, uints n, bool optional, bool nonmember = false)
     {
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _cur_variable_name = varname;
         _cur_variable_offset = nonmember ? -1 : down_cast<int>((ints)v);
@@ -2404,7 +2462,7 @@ public:
     void meta_cache_default(const T& defval)
     {
         //typedef typename std::conditional<std::is_enum<T>::value, typename EnumType<sizeof(T)>::TEnum, T>::type B;
-        typedef typename resolve_enum<T>::type B;
+        typedef typename resolve_stream_enum<T>::type B;
 
         _curvar.var = _last_var;
 
@@ -2607,7 +2665,7 @@ public:
 
         smap_init();
 
-        *this || *(typename resolve_enum<T>::type*)0;
+        *this || *(typename resolve_stream_enum<T>::type*)0;
 
         const MetaDesc* mtd = _root.desc;
 
@@ -2979,6 +3037,123 @@ private:
     void warn_obsolete(const token& name);
     void error_enum_name(const token& name);
 
+    ////////////////////////////////////////////////////////////////////////////////
+    /// @{ enum value <-> name conversions, shared by the member_enum* and enum_class_*_type methods
+    /// @note all of these use _convbuf to hold the string representation
+
+    ///Write the name of an enum value into _convbuf
+    /// @return true if a matching name was found, _convbuf is left empty if not
+    template<typename T>
+    bool enum_name_from_value(const T& v, const T values[], const char* const names[])
+    {
+        int i = 0;
+        while (names[i] != 0 && !(values[i] == v))
+            ++i;
+
+        _convbuf.reset();
+        if (!names[i])
+            return false;
+
+        _convbuf = names[i];
+        return true;
+    }
+
+    ///Set an enum value from the name held in _convbuf
+    /// @param defval value to use if the name doesn't match any from the list
+    /// @return true if the value was resolved, false if defval was used
+    template<typename T>
+    bool enum_value_from_name(T& v, const T values[], const char* const names[], const T& defval)
+    {
+        int i = 0;
+        while (names[i] != 0 && _convbuf != names[i])
+            ++i;
+
+        if (names[i]) {
+            v = values[i];
+            return true;
+        }
+
+        if (_convbuf.char_is_number(0)) {
+            //a numeric value
+            v = T(_convbuf.toint());
+            return true;
+        }
+
+        error_enum_name(_convbuf);
+        DASSERT(0);         //enum name not found
+        v = defval;
+        return false;
+    }
+
+    ///Write the space separated names of the flags set in an enum value into _convbuf
+    /// @return true if all the set bits were covered by a name, false if some were left over,
+    ///   in which case _convbuf holds the names matched so far
+    /// @note values equal to 0 are skipped here, they can't be matched bitwise
+    template<typename T>
+    bool enum_flags_name_from_value(const T& v, const T values[], const char* const names[])
+    {
+        T rest = v;
+        _convbuf.reset();
+
+        while (rest != T(0)) {
+            int i = 0;
+            while (names[i] != 0 && (values[i] == T(0) || T(values[i] & rest) != values[i]))
+                ++i;
+
+            if (!names[i])
+                return false;       //still some bits set, but no flag matching them
+
+            if (_convbuf) _convbuf << ' ';
+            _convbuf << names[i];
+            rest &= ~values[i];
+        }
+
+        return true;
+    }
+
+    ///Set an enum value from the or-ed names held in _convbuf
+    /// @param defval value to use if _convbuf holds no names at all
+    /// @return true if all the names were matched, false if some were unknown and ignored
+    /// @note allowed separators are " ,;|"
+    template<typename T>
+    bool enum_flags_value_from_name(T& v, const T values[], const char* const names[], const T& defval)
+    {
+        if (_convbuf.char_is_number(0)) {
+            //a numeric value for flags
+            v = T(_convbuf.xtouint());
+            return true;
+        }
+
+        token input = _convbuf;
+        input.trim();
+
+        if (!input) {
+            v = defval;
+            return false;
+        }
+
+        bool matched = true;
+        v = T(0);
+
+        while (input) {
+            token name = input.cut_left_group(" ,;|");
+
+            int i = 0;
+            while (names[i] != 0 && name != names[i])
+                ++i;
+
+            if (names[i])
+                v |= values[i];
+            else {
+                DASSERT(0);     //enum name not found, ignored
+                matched = false;
+            }
+        }
+
+        return matched;
+    }
+
+    /// @}
     ////////////////////////////////////////////////////////////////////////////////
 private:
 
@@ -4065,7 +4240,7 @@ inline type_holder<T> get_type_holder(T*)
 template<class T>
 void type_streamer<T>::fn(metastream* m, void* p, binstream_container_base*)
 {
-    *m || *static_cast<typename resolve_enum<T>::type*>(p);
+    *m || *static_cast<typename resolve_stream_enum<T>::type*>(p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4205,6 +4380,46 @@ struct helper {
 template <typename T>
 struct has_metastream_operator {
     static constexpr bool value = check::helper<T>::value;
+};
+
+
+///A helper to check if an enum type has its own metastream operator declared for it
+/// (see metastream::enum_class_type), as opposed to being streamed as its underlying integer type
+/// Usage: has_metastream_enum_operator<T>::value
+
+namespace check {
+
+///non-enum types never stream through an enum operator, and the detection below must not be
+/// instantiated for them
+template <typename X, bool ISENUM = std::is_enum<X>::value>
+struct enum_helper {
+    enum { value = 0 };
+};
+
+template <typename X>
+struct enum_helper<X, true> {
+    enum {
+        value = sizeof(*(metastream*)(0) || *(X*)(0)) != sizeof(char)
+    };
+};
+
+}
+
+template <typename T>
+struct has_metastream_enum_operator {
+    typedef typename std::remove_const<typename std::remove_reference<T>::type>::type X;
+
+    static constexpr bool value = check::enum_helper<X>::value != 0;
+};
+
+///Enums that have their own metastream operator are streamed through it, everything else
+/// (including plain enums) resolves the same way as resolve_enum
+template <class T>
+struct resolve_stream_enum {
+    typedef typename std::conditional<
+        has_metastream_enum_operator<T>::value,
+        typename std::remove_const<T>::type,
+        typename resolve_enum<T>::type>::type type;
 };
 
 COID_NAMESPACE_END

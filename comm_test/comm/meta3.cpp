@@ -502,6 +502,134 @@ void test_enum()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+///An enum with its own metastream operator, declared with enum_class_type
+enum class color : uint8
+{
+    black = 0,
+    red,
+    green,
+    blue,
+};
+
+inline metastream& operator || (metastream& m, color& v)
+{
+    static const color values[] = {color::black, color::red, color::green, color::blue};
+    static const char* const names[] = {"black", "red", "green", "blue", 0};
+
+    return m.enum_class_type(v, values, names, color::black);
+}
+
+///A flags enum with its own metastream operator, declared with enum_class_flags_type
+enum class mode : uint32
+{
+    none = 0,
+    read = 1,
+    write = 2,
+    rw = read | write,
+};
+
+constexpr uint32 operator & (const mode& lhs, const mode& rhs) { return uint32(lhs) & uint32(rhs); }
+constexpr mode operator | (const mode& lhs, const mode& rhs) { return mode(uint32(lhs) | uint32(rhs)); }
+constexpr mode operator ~ (const mode& value) { return mode(~uint32(value)); }
+constexpr mode& operator &= (mode& lhs, const mode& rhs) { lhs = mode(uint32(lhs) & uint32(rhs)); return lhs; }
+constexpr mode& operator |= (mode& lhs, const mode& rhs) { lhs = mode(uint32(lhs) | uint32(rhs)); return lhs; }
+
+inline metastream& operator || (metastream& m, mode& v)
+{
+    static const mode values[] = {mode::rw, mode::read, mode::write, mode::none};
+    static const char* const names[] = {"rw", "read", "write", "none", 0};
+
+    return m.enum_class_flags_type(v, values, names, mode::none);
+}
+
+///The enums above used as plain members, without any per-member enum declaration
+struct FooEnumClass
+{
+    color c = color::black;
+    mode m = mode::none;
+    int x = 0;
+
+    friend metastream& operator || (metastream& m, FooEnumClass& s)
+    {
+        return m.compound_type(s, [&]()
+        {
+            m.member("c", s.c);
+            m.member("m", s.m);
+            m.member("x", s.x, 0);
+        });
+    }
+};
+
+void test_enum_class()
+{
+    //standalone enum value, not a member of any struct
+    {
+        binstreamconstbuf txt("\"green\"");
+        fmtstreamcxx fmt(txt, false);
+        metastream meta(fmt);
+
+        color c = color::black;
+        meta.xstream_in(c);
+
+        DASSERT(c == color::green);
+    }
+
+    //standalone flags enum value
+    {
+        binstreamconstbuf txt("\"read write\"");
+        fmtstreamcxx fmt(txt, false);
+        metastream meta(fmt);
+
+        mode v = mode::none;
+        meta.xstream_in(v);
+
+        DASSERT(v == (mode::read | mode::write));
+    }
+
+    //the same enums used as struct members, resolved through their metastream operators
+    {
+        binstreamconstbuf txt("c = \"blue\", m = \"rw\", x = 5");
+        fmtstreamcxx fmt(txt, false);
+        metastream meta(fmt);
+
+        FooEnumClass s;
+        meta.xstream_in(s);
+
+        DASSERT(s.c == color::blue);
+        DASSERT(s.m == mode::rw);
+        DASSERT(s.x == 5);
+    }
+
+    //write/read round trip
+    {
+        binstreambuf bof;
+        fmtstreamcxx fmt(bof);
+        metastream meta(fmt);
+
+        FooEnumClass s;
+        s.c = color::red;
+        s.m = mode::read | mode::write;
+        s.x = 7;
+
+        meta.xstream_out(s);
+        meta.stream_flush();
+
+        charstr tmp;
+        bof.swap(tmp);
+
+        binstreamconstbuf cbuf(tmp);
+        fmt.bind(cbuf);
+
+        FooEnumClass r;
+        meta.xstream_in(r);
+
+        DASSERT(r.c == s.c);
+        DASSERT(r.m == s.m);
+        DASSERT(r.x == s.x);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void metastream_test3()
 {
     metagen_test();
@@ -513,6 +641,8 @@ void metastream_test3()
     test_as_type();
 
     test_enum();
+
+    test_enum_class();
 
     test_nested_compound();
 
