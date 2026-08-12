@@ -964,7 +964,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
 
         uint32 regular_component_count_tmp;
         uint32& regular_component_count_ref = regular_component_count ? *regular_component_count : regular_component_count_tmp;
-        regular_component_count_ref = is_root_ref ? 0 : 1;
+        regular_component_count_ref = (is_root_ref || root_component == PARENT_DIR_SEGMENT) ? 0 : 1;
 
         return do_append_compact_internal(rel_path, result, normalize_separators_only, use_separator, is_root_ref, regular_component_count_ref);
     };

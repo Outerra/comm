@@ -2820,6 +2820,16 @@ void directory_tests::test_build_path_internal()
         DASSERTX(coid::token(result) == "../b"_T, "Only the parent segment with something to consume should be resolved");
     }
 
+    // --- the parent segments a relative base leads with have nothing to consume, they are kept
+    // as they are and are not components the ones behind them could be resolved against ---
+    {
+        coid::charstr result;
+        const bool ok = directory::build_path_internal("../../a/b"_T, ""_T, result, true, false);
+
+        DASSERTX(ok, "A relative base leading up should succeed");
+        DASSERTX(coid::token(result) == "../../a/b"_T, "A base of leading parent segments should come back as it is");
+    }
+
     // --- a trailing separator marks a directory, compacting keeps it ---
     {
         coid::charstr result;
