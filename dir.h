@@ -51,6 +51,10 @@
 # include <direct.h>
 #endif
 
+///Tests of coid::directory, befriended as a whole so they can reach the parts of it that are
+///not public, see the friend declaration in @ref coid::directory
+struct directory_tests;
+
 COID_NAMESPACE_BEGIN
 
 #ifdef SYSTYPE_WIN
@@ -64,6 +68,7 @@ static constexpr token DIR_SEPARATOR_STRING = "/"_T;
 ////////////////////////////////////////////////////////////////////////////////
 class directory
 {
+    friend struct ::directory_tests;
 public:
 
 #ifdef SYSTYPE_MINGW
@@ -173,10 +178,18 @@ public:
     /// @return One of the following:
     ///         - `invalid`: The path is not syntactically valid.
     ///         - `valid_relative_directory_path`: A valid relative path to a directory.
-    ///         - `valid_absolute_directory_path`: A valid absolute path to a directory.
+    ///         - `valid_absolue_directory_path`: A valid absolute path to a directory.
     ///         - `valid_relative_file_path`: A valid relative path to a file.
     ///         - `valid_absolute_file_path`: A valid absolute path to a file.
     /// @note This function only verifies the path's syntax; it does not check if the file or directory exists on the device.
+    /// @note A path is absolute when it starts with a root component, which is "C:" for a drive
+    ///       path and "\\\\server" for a unc path, the latter written with either separator style,
+    ///       "\\\\server\\share" and "//server/share" alike. @see get_path_component
+    /// @note The server of a unc root, the share that may follow it and every component below are
+    ///       all validated as names. A path holding only the root, or only the root and the share,
+    ///       denotes a directory, the same way a bare drive does.
+    /// @note On non windows systems a path is absolute when it starts at the root separator
+    ///       ("/...")
     static verify_path_syntax_result_enum verify_path_syntax(const coid::token& path);
 
     bool is_entry_open() const;
@@ -263,8 +276,16 @@ public:
             treat_trailing_separator(src_str, false);
             treat_trailing_separator(dst_str, '/');
 
+
             coid::charstr check = dst_str;
-            check << get_path_component(source.get_token());
+
+            uint32 root_length = 0;
+            coid::token dst_dir;
+            coid::token remainder;
+            const bool valid = get_path_component_internal(source.get_token(), root_length, path_component_enum::last, dst_dir, remainder);
+            DASSERTX(valid, "dst_dir is not valid. How?");
+
+            check << dst_dir;
 
             if (is_valid_directory(check))
                 return ersALREADY_EXISTS;
@@ -450,16 +471,43 @@ public:
     /// @brief Appends a relative or absolute path to a destination buffer.
     /// @param[in,out] dst  The destination path buffer; receives the resolved result.
     /// @param[in]     path The path component (relative or absolute) to append or apply.
-    /// @param[in]     keep_below If true, restricts the operation to prevent the resulting 
-    ///                           path from escaping the initial directory scope of @p dst.
+    /// @param[in]     keep_below If true, the operation is carried out only when the resulting
+    ///                           path stays below the initial directory scope of @p dst.
     ///
-    /// @return An integer status code indicating the outcome:
-    ///         @retval  1 Success. The path was safely appended or replaced.
-    ///         @retval  0 Error. The operation failed (e.g., buffer overflow, invalid path).
-    ///         @retval -1 Warning/Success. The path is well-formed but escapes the original 
-    ///                    directory scope of @p dst (only possible if @p keep_below is false).
-    /// @note If @p path is absolute, it completely replaces the contents of @p dst.
-    static int append_path(charstr& dst, token path, bool keep_below = false);
+    /// @return True when @p dst received the path, false only when @p keep_below is set and the
+    ///     result would not lie below @p dst.
+    /// @note An absolute @p path replaces the contents of @p dst, a relative one is appended to it.
+    ///     With @p keep_below set, either is applied only when the result really lies below @p dst.
+    /// @note @p dst is modified on success only, so the buffer of a failed call stays usable.
+    /// @note With @p keep_below set, parent segments are allowed as long as the resolved path ends
+    ///     up below @p dst again, which requires the components leading back to match the ones the
+    ///     parent segments cut off. Component names are compared the way the platform compares them.
+    /// @note The two are joined with the OS default separator, and only when @p dst does not
+    ///     already end with one. @p path keeps the separators it is written with.
+    /// @note @p keep_below compacts the result, the test against @p dst needing it resolved anyway.
+    ///     Without it nothing is resolved, @p dst receives @p path as it was given.
+    static bool append_path(charstr& dst, token path, bool keep_below = false);
+
+    /// @brief Builds a path from a base path and a path component appended to it.
+    /// @param[in] base The base path the component is appended to.
+    /// @param[in] path The path component (relative or absolute) to append or apply.
+    /// @param[in] keep_below If true, the path is built only when the result stays below the
+    ///                       directory scope of @p base.
+    ///
+    /// @return The resolved path, empty when @p path is malformed or when @p keep_below is set
+    ///     and the result would not lie below @p base.
+    /// @note Convenience wrapper around @ref append_path for the common case of building
+    ///     a new path instead of extending an existing buffer. The failure of the two is
+    ///     collapsed into an empty result, use @ref append_path when the cause matters.
+    static charstr make_path(const token& base, token path, bool keep_below = false)
+    {
+        charstr dst = base;
+
+        if (!append_path(dst, path, keep_below))
+            dst.reset();
+
+        return dst;
+    }
 
     static bool is_absolute_path(const token& path);
 
@@ -473,9 +521,25 @@ public:
     /// @note paths must be compact
     static bool subpath(token root, token& path);
 
-    ///Remove nested ../ chunks, remove extra path separator characters
-    /// @param tosep replace separators with given character (usually '/' or '\\')
-    static bool compact_path(charstr& dst, char tosep = 0);
+    /// @brief Resolve the dot segments of a path and collapse the separator runs, in place
+    /// @param [in,out] dst Path to compact, rewritten in place. An empty one is not an error.
+    /// @param use_separator Replace the separators that are kept with this character (usually '/'
+    ///     or '\\'). Pass 0 to keep them as they are written.
+    /// @return False when the path is malformed, a drive letter followed by anything but a
+    ///     separator ("C:a"), or when it resolves above the root of an absolute path. @p dst is
+    ///     left partially compacted then, it is not restored.
+    /// @note A parent dir segment consumes the component in front of it, a current dir segment
+    ///     resolves to nothing. Only a whole component of two dots is a parent segment, a name may
+    ///     start with them - "..b" is an ordinary component and is consumed like any other.
+    /// @note A relative path may lead above itself, the parent segments left with nothing to consume
+    ///     are kept ("a/../../b" comes out as "../b"). An absolute path has a root to fail against,
+    ///     which is what the false return is for.
+    /// @note The root is kept: the "C:" drive on windows, the leading separator elsewhere. The two
+    ///     leading separators of a unc path are kept the same way, but the server and the share
+    ///     below them are ordinary components here, a parent segment consumes them like any other
+    ///     ("\\\\server\\..\\x" comes out as "\\\\x"). @see get_path_root_length_internal
+    /// @note A trailing separator is preserved, a run of separators anywhere collapses into one.
+    static bool compact_path(charstr& dst, char use_separator = 0);
 
     /// @brief Normalizes a path by resolving relative components and fixing separators.
     /// @details Removes redundant path separators (e.g., `//` -> `/`) and resolves 
@@ -583,49 +647,75 @@ public:
 
     /// @brief Extracts the first or last path component and optionally retrieves the remaining path.
     /// @param[in]  path          Input path (absolute or relative).
-    /// @param[out] remainder_out Optional pointer to receive the remaining path after removing the extracted component.
+    /// @param[in]  component     Specifies whether to extract the `first` or `last` component.
+    ///                           Defaults to `path_component_enum::last`.
+    /// @param[out] remainder     Optional pointer to receive the remaining path after removing the extracted component.
     ///                           - **`path_component_enum::first`:** Strips the leading separator from the remainder.
     ///                           - **`path_component_enum::last`:** Preserves the trailing separator on the remainder.
     ///                           Pass `&path` to perform an in-place update.
-    /// @param[in]  component     Specifies whether to extract the `first` or `last` component.
-    ///                           Defaults to `path_component_enum::last`.
-    ///
+    /// @param[out] is_root_component Optional pointer that receives true when the returned component
+    ///                           is the root component of the path, see the note on reassembly.
     /// @return The extracted path component, or an empty token if @p path is not a valid (non-empty) path.
     ///
     /// @pre @p path must not be empty; violating this asserts (DASSERTX) in debug builds. The call
     ///      does not short-circuit, but still produces a well-defined (empty) result either way,
     ///      via the same handling used for an all-separator path.
     ///
-    /// @note **In-Place Modification:** @p path and @p remainder_out can safely reference
+    /// @note **In-Place Modification:** @p path and @p remainder can safely reference
     ///       the exact same object (e.g., `get_path_component(p, &p)`).
     ///
     /// @note **Root path:** if @p path consists solely of separator character(s) (e.g. the POSIX
     ///       root "/"), there is no component to peel off. Matching POSIX `dirname()`/`basename()`
     ///       (both of which return "/" for input "/"), both the returned component and
-    ///       @p remainder_out are set to @p path unchanged, regardless of @p component.
+    ///       @p remainder are set to @p path unchanged, regardless of @p component.
+    ///
+    /// @note **UNC path (Windows only):** "\\\\server" is the root component of a unc path, the
+    ///       counterpart of the "C:" of a drive path. The share below it is an ordinary component.
+    ///       `first` returns "\\\\server" and leaves the share at the head of @p remainder,
+    ///       `last` peels down to the root and leaves @p remainder empty once it is reached,
+    ///       the same way a drive does. Both separator styles are recognized, "\\\\server" and
+    ///       "//server" alike.
+    ///
+    /// @note **Reassembly:** the components of a path come back in a form that concatenates back
+    ///       into it, `root << separator() << component << separator() << ...`. The root component
+    ///       is "C:" for a drive, "\\\\server" for a unc path, and the empty string for a path that
+    ///       starts at the root of the current volume, which is how "/a/b" comes back together.
+    ///
+    /// @note **Root component:** @p is_root_component tells the root apart from an ordinary one,
+    ///       which the returned token alone cannot do, an empty root looking like no component at
+    ///       all. It is set for the three roots above and for a path made solely of separators.
+    ///       Only `first` can reach the root of a relative-to-volume path, `last` walks down to it
+    ///       for a drive and for a unc path, where it comes with an empty remainder.
     ///
     /// @example
     ///   coid::token rem;
     ///
     ///   // Extract LAST: trailing separator stays attached to the remaining directory path
-    ///   auto last = get_path_component("foo/bar/baz.txt", &rem, path_component_enum::last);
+    ///   auto last = get_path_component("foo/bar/baz.txt", path_component_enum::last, &rem);
     ///   // last == "baz.txt", rem == "foo/bar/"
     ///
     ///   // Extract FIRST: leading separator is stripped from the remainder
-    ///   auto first = get_path_component("foo/bar/baz.txt", &rem, path_component_enum::first);
+    ///   auto first = get_path_component("foo/bar/baz.txt", path_component_enum::first, &rem);
     ///   // first == "foo", rem == "bar/baz.txt"
     ///
     ///   // Absolute path: the leading separator stays attached to the remainder, same as any other
-    ///   auto base = get_path_component("/a", &rem, path_component_enum::last);
+    ///   auto base = get_path_component("/a", path_component_enum::last, &rem);
     ///   // base == "a", rem == "/"
     ///
     ///   // Root path: nothing to split, both sides come back as "/"
-    ///   auto root = get_path_component("/", &rem);
+    ///   auto root = get_path_component("/", path_component_enum::last, &rem);
     ///   // root == "/", rem == "/"
+    ///
+    ///   // Root component: the empty first component of a path starting at the volume root
+    ///   bool is_root = false;
+    ///   auto vol = get_path_component("/a/b", path_component_enum::first, &rem, &is_root);
+    ///   // vol == "", rem == "a/b", is_root == true
     static coid::token get_path_component(
         const coid::token& path,
-        coid::token* remainder_out = nullptr,
-        path_component_enum component = path_component_enum::last
+        uint32& root_length,
+        path_component_enum component = path_component_enum::last,
+        coid::token* remainder = nullptr,
+        bool* is_root_component = nullptr
     );
 
 protected:
@@ -661,6 +751,81 @@ protected:
     /// @return handle of module where fn resides
     static uints get_module_path_func(const void* fn, charstr& dst, bool append);
 
+    /// @brief Peel the first or the last component off a path whose root has already been measured
+    /// @param[in]      path          A valid path, the empty token once the walk is over.
+    ///                               @see verify_path_syntax
+    /// @param[in, out] root_length   Length of the root of @p path (see get_path_root_length_internal),
+    ///                               zero when it is relative. The call that consumes the root sets
+    ///                               it back to zero, so the same variable can be handed to every
+    ///                               call of a walk. When 0 is passed for a path that does carry a
+    ///                               root, the root would be cut into ordinary components. 
+    /// @param[in]      component     Specifies whether to extract the `first` or the `last` component.
+    /// @param[out]     result        The extracted component, the empty token when it the UNIX root.
+    /// @param[out]     remainder     Token that left of @p path once the
+    ///                               component is taken off, the empty token when nothing is left. May alias @p path.
+    /// @return True when result is valid component, False when no valid component left
+    /// @note The root is the first component of the path, so a `first` component of a rooted path is
+    ///       the root and the remainder is the whole of the path below it, while a `last` component
+    ///       is cut below the root, which stays at the head of the remainder until the remainder is
+    ///       the bare root and the next call consumes it.
+    /// @note Components are always returned without separators with exception of root UNC path on Windows system with two leading separators
+    /// @note Remainder are always returned without separator that was between the returned component and remainder
+    static bool get_path_component_internal(
+        const coid::token& path,
+        uint32& root_length_in_out,
+        path_component_enum component,
+        coid::token& result,
+        coid::token& remainder
+    );
+
+    /// @brief Full length of the root of the path, the separator run behind it included
+    /// @param[in] path Path to measure the root of, may be empty.
+    /// @return The length of the root, zero when @p path is relative.
+    static uint32 get_path_root_length_internal(const coid::token& path);
+
+    /// @brief Internal function that appends the path to the result_out while compacting the path
+    /// @param [in] path - Path to append. Must be relative. Taken by value, the caller's token is left alone.
+    /// @param [in, out] result_in_out - result path. Can't be empty. Must contain at least one path component. Can be relative or absolute. Must be compacted.
+    ///     A relative result may end up empty, resolved away by the parent dir segments of @p path.
+    /// @param normalize_separators_only - When true, no compacting is performed only the separators are normalized(all the redundant separators are removed). Compacting includes the separator normalization.
+    /// @param use_separator - Separator the components are joined with. When 0 the separator is the
+    ///     original one that was in front of the component in @p path, a run of them coming down to
+    ///     the last one of the sequence. The first component of a relative path has none in front of
+    ///     it, the OS default separator is used there. Nothing is written when @p result_in_out
+    ///     already ends with a separator.
+    /// @param is_result_absolute - if the result is absolute.
+    /// @param [in, out] result_regular_component_count_in_out - In: how many regular components the path contains before the call Out: how many regular components the path contains before the call
+    /// @return False when compacting fails. Compacting fails when result is absolute and the path is resolved above the root.
+    /// @note Only the separators this call writes are subject to @p use_separator, the ones already
+    ///     in @p result_in_out are left as they are - the caller normalizes the result beforehand.
+    /// @note The root of @p result_in_out is never cut into, and a parent dir segment that resolves
+    ///     against nothing is kept as a segment of its own, a relative result having no root to
+    ///     fail against. Neither a parent nor a current dir segment counts as a regular component.
+    /// @note A trailing separator of @p path is kept on the result, a run of separators anywhere in
+    ///     it collapses into the single one the run ends with.
+    static bool do_append_compact_internal(token path, charstr& result_in_out, bool normalize_separators_only, char use_separator, bool is_result_absolute, uint32& result_regular_component_count_in_out);
+
+
+    /// @brief Builds a path from a base path with another path appended to it
+    /// @param[in] base_path Base of the result path, may be relative, absolute or empty.
+    /// @param[in] appended_path Path appended to the base path, may be relative or absolute.
+    ///     An absolute path replaces the base path.
+    /// @param[out] result Resulting path, untouched on fail. May alias the buffer that
+    ///     @p base_path or @p appended_path point into.
+    /// @param[in] make_compact Resolve the current and parent dir segments and collapse the
+    ///     separator runs.
+    /// @param[in] keep_below Fail when the result would not lie below @p base_path.
+    /// @param[in] to_separator Separator to normalize to, typically '/' or '\\'. Pass 0 to keep
+    ///     the separators as they are, the two paths are then joined with the last separator
+    ///     found in @p base_path, or with the platform one when it holds none.
+    /// @return True when @p result received a valid path, false on fail.
+    static bool build_path_internal(
+        const token& base_path,
+        const token& appended_path,
+        charstr& result,
+        bool make_compact,
+        bool keep_below,
+        char to_separator = 0);
 private:
     static constexpr token_literal CURRENT_DIR_SEGMENT = "."_T;
     static constexpr token_literal PARENT_DIR_SEGMENT = ".."_T;

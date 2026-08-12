@@ -54,7 +54,32 @@ COID_NAMESPACE_BEGIN
 #include <unistd.h>
 #endif
 
+#ifdef SYSTYPE_WIN
+////////////////////////////////////////////////////////////////////////////////
 
+bool is_unc_path(const coid::token& path);
+
+////////////////////////////////////////////////////////////////////////////////
+
+static uint get_unc_root_len(const coid::token& path)
+{
+    if (path.len() <= 2 || !is_unc_path(path))
+    {
+        return 0;
+    }
+
+    coid::token rest = path;
+    rest.shift_start(2);
+
+    const coid::token server = rest.cut_left_group(directory::separators());
+
+    return server.is_empty()
+        ? 0
+        : uint(server.ptre() - path.ptr());
+}
+#endif // end of SYSTYPE_WIN
+
+////////////////////////////////////////////////////////////////////////////////
 const char* directory::no_trail_sep(zstring& name)
 {
     char c = name.get_token().last_char();
@@ -205,7 +230,7 @@ uint64 directory::file_size(zstring file)
 bool directory::is_absolute_path(const token& path)
 {
 #ifdef SYSTYPE_WIN
-    return path.nth_char(1) == ':' || path.begins_with("\\\\"_T);
+    return path.nth_char(1) == ':' || is_unc_path(path);
 #else
     return path.first_char() == '/';
 #endif
@@ -218,80 +243,9 @@ bool directory::is_subpath(token root, token path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int directory::append_path(charstr& dst, token path, bool keep_below)
+bool directory::append_path(charstr& dst, token path, bool keep_below)
 {
-    if (is_absolute_path(path))
-    {
-        dst = path;
-
-        return keep_below && !is_subpath(dst, path) ? -1 : 1;
-    }
-    else
-    {
-        char sep = separator();
-
-        token tdst = dst;
-        if (directory::is_separator(tdst.last_char())) {
-            sep = tdst.last_char();
-            tdst--;
-        }
-
-        bool is_below = true;
-
-        while (path.begins_with(PARENT_DIR_SEGMENT))
-        {
-            if (keep_below)
-                is_below = false;
-
-            path.shift_start(2);
-            char c = path.first_char();
-
-            if (c != 0 && !is_separator(c))
-                return 0;           //bad path, .. not followed by a separator
-
-            if (tdst.is_empty())
-                return 0;           //too many .. in path
-
-            token cut = tdst.cut_right_group_back(DIR_SEPARATORS, token::cut_trait_keep_sep_with_returned_default_full());
-            if (directory::is_separator(cut.first_char()))
-                sep = cut.first_char();
-
-            if (c == 0) {
-                dst.resize(tdst.len());
-                return is_below ? 1 : -1;
-            }
-
-            ++path;
-        }
-
-        if (keep_below) {
-            //check if the appended path doesn't escape out
-            int rdepth = 0;
-            token rp = path;
-            while (token v = rp.cut_left_group(DIR_SEPARATORS))
-            {
-                if (v == CURRENT_DIR_SEGMENT);
-                else if (v == PARENT_DIR_SEGMENT)
-                    rdepth--;
-                else
-                    rdepth++;
-
-                if (rdepth < 0) {
-                    is_below = false;
-                    break;
-                }
-            }
-        }
-
-        dst.resize(tdst.len());
-
-        if (dst && !is_separator(dst.last_char()))
-            dst << sep;
-
-        dst << path;
-
-        return is_below ? 1 : -1;
-    }
+    return build_path_internal(dst, path, dst, keep_below, keep_below);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -709,116 +663,13 @@ bool directory::get_relative_path(token src, token dst, charstr& relout, bool la
         }
     }
 
-    return append_path(relout, dst) != 0;
+    return append_path(relout, dst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::compact_path(charstr& dst, char tosep)
+bool directory::compact_path(charstr& dst, char use_separator)
 {
-    token dtok = dst;
-
-#ifdef SYSTYPE_WIN
-    bool absp = false;
-
-    if (dtok.begins_with("\\\\"_T)) {
-        absp = true;
-        dtok.shift_start(2);
-    }
-    else if (dtok.nth_char(1) == ':') {
-        absp = true;
-        char c2 = dtok.nth_char(2);
-
-        if (c2 != '/' && c2 != '\\' && c2 != 0)
-            return false;
-        if (!c2)
-            return true;
-        if (tosep)
-            dst[2] = tosep;
-        dtok.shift_start(2);
-    }
-#else
-    bool absp = dtok.first_char() == '/';
-    if (absp) {
-        if (tosep)
-            dst[0] = tosep;
-        dtok.shift_start(1);
-    }
-#endif
-
-    token fwd, rem;
-    fwd.set_empty(dtok.ptr());
-
-    int nfwd = 0;
-
-    do {
-        token seg = dtok.cut_left_group(DIR_SEPARATORS);
-        bool isup = seg == PARENT_DIR_SEGMENT;
-
-        ints d = dtok.ptr() - seg.ptre();
-        if (d > 1) {
-            //remove extra path separators
-            dst.del(int(seg.ptre() - dst.ptr()), uint(d - 1));
-            dtok.shift_start(1 - d);
-            dtok.shift_end(1 - d);
-        }
-
-        //normalize path separator
-        if (d > 0 && tosep)
-            *(char*)seg.ptre() = tosep;
-
-        if (seg == CURRENT_DIR_SEGMENT) {
-            int d = int(dtok.ptr() - seg.ptr());
-            dst.del(int(seg.ptr() - dst.ptr()), d);
-            dtok.shift_start(-d);
-            dtok.shift_end(-d);
-        }
-        else if (!isup) {
-            if (rem.len()) {
-                int rlen = rem.len();
-                dst.del(int(rem.ptr() - dst.ptr()), rlen);
-                dtok.shift_start(-rlen);
-                dtok.shift_end(-rlen);
-                rem.set_empty();
-            }
-
-            //count forward going tokens
-            ++nfwd;
-            fwd._pte = dtok ? (dtok.ptr() - 1) : dtok.ptr();
-        }
-        else if (nfwd) {
-            //remove one token from fwd
-            fwd.cut_right_group_back(DIR_SEPARATORS);
-            rem.set(fwd.ptre(), dtok.first_char() ? (dtok.ptr() - 1) : dtok.ptr());
-            --nfwd;
-        }
-        else {
-            //no more forward tokens, remove rem range
-            if (absp)
-                return false;
-
-            if (rem.len()) {
-                if (rem.ptr() > dst.ptr())
-                    rem.shift_start(-1);
-                else if (rem.ptre() < dst.ptre())
-                    rem.shift_end(1);
-
-                int rlen = rem.len();
-
-                dst.del(int(rem.ptr() - dst.ptr()), rlen);
-                dtok.shift_start(-rlen);
-                dtok.shift_end(-rlen);
-                rem.set_empty();
-            }
-
-            fwd._ptr = dtok.ptr();
-        }
-    }
-    while (dtok);
-
-    if (rem.len())
-        dst.del(int(rem.ptr() - dst.ptr()), rem.len());
-
-    return true;
+    return build_path_internal(dst, ""_T, dst, true, true, use_separator);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -903,70 +754,312 @@ uint64 directory::calculate_directory_size(const coid::token& path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-coid::token directory::get_path_component(const coid::token& path, coid::token* remainder_out, path_component_enum component)
+coid::token directory::get_path_component(const coid::token& path, uint32& root_length, path_component_enum component, coid::token* remainder, bool* is_root_component)
 {
-    DASSERTX(verify_path_syntax(path) != verify_path_syntax_result_enum::invalid, "get_path_component: path is not a valid (non-empty) path. The result is undefined.");
-
-#ifndef SYSTYPE_WIN
-
-    //a path made up entirely of separator(s) - the POSIX root "/", or a run like "///" - has no
-    // component to peel off. By convention (matching POSIX dirname()/basename(), where both
-    // dirname("/") and basename("/") return "/") the extracted component and the remainder are
-    // both the root itself, for either `first` or `last`.
-    if (path.count_ingroup(separators()) == path.len())
+    if (root_length == -1)
     {
-        if (remainder_out) *remainder_out = path;
-        return path;
+        root_length = get_path_root_length_internal(path);
     }
-#endif // end of SYSTYPE_WIN
-    const uint path_len = path.len();
 
-    //DOS drive letters ("C:", "C:\\") only exist on Windows; on other systems a leading
-    // "x:" is just an ordinary (if unusual) path segment, not a drive
-#ifdef SYSTYPE_WIN
-    const bool is_dos_drive = path_len > 1 && path_len <= 3 && path[1] == ':';
-#else
-    const bool is_dos_drive = false;
-#endif // end of SYSTYPE_WIN
+    coid::token remainder_tmp;
+    coid::token& remainder_ref = remainder ? *remainder : remainder_tmp;
+    coid::token result;
 
-    //use is_separator() rather than a hardcoded '\\'/'/' check: on non-Windows systems
-    // backslash is a perfectly ordinary filename character, not a path separator
-    const bool is_last_sep = (path_len > 1) && is_separator(path.last_char());
+    //the root is what the call that zeroes the root length has consumed, an empty component alone
+    //does not tell it apart, the unix root being the only root that comes back empty
+    const bool had_root = root_length != 0;
 
-    if (is_dos_drive)
+    const bool valid = get_path_component_internal(path, root_length, component, result, remainder_ref);
+    if (is_root_component) *is_root_component = valid && had_root && root_length == 0;
+
+    return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool directory::get_path_component_internal( 
+    const coid::token& path,
+    uint32& root_length_in_out,
+    path_component_enum component,
+    coid::token& result,
+    coid::token& remainder
+)
+{
+    if (root_length_in_out > 0)
     {
-        if (path_len == 2)
+#ifdef SYSTYPE_WIN
+        DASSERTX(root_length_in_out > 1, "This can be possible only in UNIX");
+#endif // SYSTYPE_WIN
+
+        if (path.len() <= root_length_in_out || component == path_component_enum::first)
         {
-            //capture the result before touching remainder_out, in case it aliases path
-            coid::token result = path;
-            if (remainder_out) *remainder_out = coid::token();
-            return result;
+#ifdef SYSTYPE_WIN
+            //the root is taken without the separator run behind it, but with the two leading ones of
+            //a unc path, which are a part of it. The length is clamped because the walk reaches the
+            //bare root with a path shorter than the root length ("C:" against a root length of 3)
+            const uints root_len = path.len() < root_length_in_out ? path.len() : uints(root_length_in_out);
+            result = coid::token(path.ptr(), root_len);
+            while (!result.is_empty() && is_separator(result.last_char()))
+                result.shift_end(-1);
+
+            DASSERTX(result.is_set(), "Tha path is invalid. This can happen only in UNIX");
+#else
+            result = coid::token();
+#endif // SYSTYPE_WIN
+            remainder = coid::token(path.ptr() + root_length_in_out, path.ptre());
+            root_length_in_out = 0;
+            return true;
         }
-        else if (is_last_sep)
-        {
-            coid::token result = path.shifted_end(-1);
-            if (remainder_out) *remainder_out = coid::token();
-            return result;
-        }
-        else // invalid -> seems like drive but with unexpected 3rd char (should be dir separator)
-        {
-            if (remainder_out) *remainder_out = coid::token();
-            return coid::token();
-        }
+    }
+
+    remainder = path;
+    if (component == path_component_enum::first)
+    {
+        result = remainder.cut_left_group(separators());
     }
     else
     {
-        coid::token tok(is_last_sep ? path.shifted_end(-1) : path);
-        coid::token result;
+        //a trailing separator run is not a component of its own
+        if (is_separator(remainder.last_char()))
+        {
+            remainder.cut_right_group_back(separators());
+        }
 
-        result = component == path_component_enum::last
-            ? tok.cut_right_group_back(separators(), coid::token::cut_trait_keep_sep_with_source_default_full())
-            : tok.cut_left_group(separators());
-
-        if (remainder_out) *remainder_out = tok;
-        return result;
+        result = remainder.cut_right_group_back(separators());
     }
+
+    return result.is_set();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool directory::do_append_compact_internal(token path, charstr& result_in_out, bool normalize_separators_only, char use_separator, bool is_result_absolute, uint32& result_regular_component_count_in_out)
+{
+    token component;
+    char next_separator = 0;
+    const bool ends_with_separator = path.ends_with_any_of(DIR_SEPARATORS);
+
+    uint32 root_length = 0;
+
+    if (result_in_out.is_set() && !coid::token(result_in_out).ends_with_any_of(DIR_SEPARATORS))
+    {
+        next_separator = use_separator ? use_separator : separator();
+    }
+
+    while (path.is_set())
+    {
+        component = get_path_component(path, root_length, path_component_enum::first, &path);
+
+        if (normalize_separators_only)
+        {
+            if (next_separator)
+            {
+                result_in_out << next_separator;
+            }
+
+            result_in_out << component;
+        }
+        else
+        {
+            if (component == PARENT_DIR_SEGMENT)
+            {
+                if (result_regular_component_count_in_out == 0)
+                {
+                    if (is_result_absolute) // Can't go below the root
+                    {
+                        return false;
+                    }
+                    else // Add the PARENT_DIR_SEGMENT to result
+                    {
+                        if (next_separator)
+                        {
+                            result_in_out << next_separator;
+                        }
+                        result_in_out << PARENT_DIR_SEGMENT;
+                    }
+                }
+                else // Cut off last component from result
+                {
+                    token cutoff = get_path_component(result_in_out, root_length, path_component_enum::last);
+                    if (cutoff.len() == result_in_out.len() - 1)
+                    {
+                        result_in_out.resize(0);
+                    }
+                    else
+                    {
+                        result_in_out.resize(-int(cutoff.len()) - 1);
+                    }
+
+                    --result_regular_component_count_in_out;
+                }
+            }
+            else if (component != CURRENT_DIR_SEGMENT) // regular component. Add it to the result to result
+            {
+                if (next_separator)
+                {
+                    result_in_out << next_separator;
+                }
+
+                result_in_out << component;
+                ++result_regular_component_count_in_out;
+            }
+        }
+
+        // result is empty next component will be appended without leading separator
+        if (result_in_out.is_empty())
+        {
+            next_separator = 0;
+        }
+        else if(next_separator != 0 || component != CURRENT_DIR_SEGMENT)  // when next separator is 0 and the component was current dir
+        {
+            // take the last separator from remaining path
+            next_separator = use_separator ? use_separator : *(path.ptr() - 1);
+        }
+    }
+
+    // treat original trailing separator
+    if (ends_with_separator)
+    {
+        result_in_out << next_separator;
+    }
+
+    return true;
+};
+
+
+bool directory::build_path_internal(const token& base_path, const token& appended_path, charstr& result, bool make_compact, bool keep_below, char use_separator)
+{
+    charstr tmp_result(STACK_STRING(base_path.len() + appended_path.len() + 2)); // +1 zero termination +1 possible missing trailing separator in base_path
+    const bool effective_compact_path = make_compact || keep_below;
+    const bool normalize_separators_only = !effective_compact_path && use_separator != 0;
+    const bool appended_path_is_absolute = is_absolute_path(appended_path);
+
+    bool base_path_is_absolute = false;
+    uint32 base_path_regular_component_count = 0;
+
+    auto do_compact = [](const coid::token path, charstr& result, bool normalize_separators_only, char use_separator, bool* is_absolute = nullptr, uint32* regular_component_count = nullptr)->bool
+    {
+        bool is_root_tmp;
+        bool& is_root_ref = is_absolute ? *is_absolute : is_root_tmp;
+        uint32 root_len = -1;
+        coid::token rel_path = path;
+        coid::token root_component;
+        // get the first compomonent that is not '.'
+        do
+        {
+            root_component = get_path_component(rel_path, root_len, path_component_enum::first, &rel_path, &is_root_ref);
+        } while(root_component == CURRENT_DIR_SEGMENT);
+
+        result = root_component;
+
+        // there must have been separator after the root
+        if (root_component.ptre() != rel_path.ptre())
+        {
+            char separator = use_separator ? use_separator : *(rel_path.ptr() - 1);
+            // malformed root (e.g. C:a)
+            if (!is_separator(separator))
+            {
+                return false;
+            }
+            result << separator;
+        }
+
+        uint32 regular_component_count_tmp;
+        uint32& regular_component_count_ref = regular_component_count ? *regular_component_count : regular_component_count_tmp;
+        regular_component_count_ref = is_root_ref ? 0 : 1;
+
+        return do_append_compact_internal(rel_path, result, normalize_separators_only, use_separator, is_root_ref, regular_component_count_ref);
+    };
+
+    if (base_path.is_set() && (effective_compact_path || normalize_separators_only))
+    {
+        if (!do_compact(base_path, tmp_result, normalize_separators_only, use_separator, &base_path_is_absolute, &base_path_regular_component_count))
+        {
+            return false;
+        }
+    }
+    else 
+    {
+        tmp_result = base_path;
+    }
+
+    /// only compact beforehand when absolute
+    if (appended_path.is_set())
+    {
+        if(appended_path_is_absolute)
+        {
+            if (!keep_below)
+            {
+                tmp_result = appended_path;
+            }
+            else 
+            {
+                charstr compact_appended_path(STACK_STRING(appended_path.len() + 1));
+                if (!do_compact(appended_path, compact_appended_path, normalize_separators_only, use_separator))
+                {
+                    return false;
+                }
+
+                if (is_subpath(tmp_result, compact_appended_path))
+                {
+                    tmp_result.swap(compact_appended_path);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else 
+        {
+            charstr compact_base_path;
+            if (keep_below)
+            {
+                compact_base_path = charstr(STACK_STRING(tmp_result.len() + 1));
+                compact_base_path.set_from(tmp_result);
+            }
+
+            if (effective_compact_path)
+            {
+                if (!do_append_compact_internal(appended_path, tmp_result, normalize_separators_only, use_separator, base_path_is_absolute, base_path_regular_component_count) || (keep_below && !is_subpath(compact_base_path, tmp_result)))
+                {
+                    return false;
+                }
+            }
+            else 
+            {
+                if (tmp_result.is_set() && !tmp_result.get_token().ends_with_any_of(DIR_SEPARATORS))
+                {
+                    tmp_result << (use_separator ? use_separator : separator());
+                }
+
+                tmp_result << appended_path;
+            }
+        }
+    }
+
+    result = tmp_result;
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint32 directory::get_path_root_length_internal(const coid::token& path)
+{
+    const uint path_len = path.len();
+#ifdef SYSTYPE_WIN
+    const bool is_dos_drive = path_len >= 2 && path[1] == ':';
+    
+    if (is_dos_drive)
+    {
+        return path.shifted_start(2).count_ingroup(separators()) + 2;
+    }
+    else 
+    {
+        const uint unc_root_len = get_unc_root_len(path);
+        return unc_root_len > 0 ? (unc_root_len + path.shifted_start(unc_root_len).count_ingroup(separators())) : 0;
+    }
+
+
+#else
+    return path.count_ingroup(separators());
+#endif
+}
 COID_NAMESPACE_END

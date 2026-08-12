@@ -364,13 +364,12 @@ public:
             if (!current_dir(curpath, dst) || !directory::compact_path(dst, '/'))
                 return false;
 
-            int rv = directory::append_path(dst, incpath, relpath == 0);
-            if (!rv)
+            //with relpath null the include must stay below curpath, append_path enforces it
+            if (!directory::append_path(dst, incpath, relpath == 0))
                 return false;
 
-            //relative paths below curpath are always allowed, not checked
-            if (!relpath || rv > 0)
-                relsub = true;
+            //a relative include is trusted, it is not run through the access check
+            relsub = true;
         }
         else {
             //absolute
@@ -505,7 +504,7 @@ private:
             curpath.consume_icase("file:///"_T);
             dst = _root_path;
 
-            return directory::append_path(dst, curpath, true) != 0;
+            return directory::append_path(dst, curpath, true);
         }
 
         return true;

@@ -56,6 +56,10 @@ extern "C" {
 
 COID_NAMESPACE_BEGIN
 
+////////////////////////////////////////////////////////////////////////////////
+
+bool is_unc_path(const coid::token& path) { return path.begins_with("\\\\"_T) || path.begins_with("//"_T); };
+
 
 ////////////////////////////////////////////////////////////////////////////////
 directory::~directory()
@@ -576,10 +580,42 @@ directory::verify_path_syntax_result_enum directory::verify_path_syntax(const co
     token tok = path;
 
     const uint tlen = tok.len();
-    const bool is_abosolute = tlen >= 2 && tok[1] == ':';
+
+    //a unc path, \\server\share\..., is absolute as well, but carries no drive letter
+    const bool is_unc = tlen >= 2 && is_unc_path(tok);
+    const bool is_abosolute = is_unc || (tlen >= 2 && tok[1] == ':');
     const bool lastsep = is_separator(tok.last_char());
 
-    if (is_abosolute)
+    if (is_unc)
+    {
+        tok.shift_start(2);
+
+        //the server is mandatory, a bare "\\\\" prefix is not a path
+        const coid::token server = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_all_default_full());
+        if (!is_valid_name(server))
+        {
+            return verify_path_syntax_result_enum::invalid;
+        }
+
+        // only the server is in the path
+        if (tok.is_empty())
+        {
+            return verify_path_syntax_result_enum::valid_absolue_directory_path;
+        }
+
+        const coid::token share = tok.cut_left_group(DIR_SEPARATORS, coid::token::cut_trait_remove_sep_all_default_full());
+        if (!is_valid_name(share))
+        {
+            return verify_path_syntax_result_enum::invalid;
+        }
+
+        // only the server and the share are in the path, a share is a directory
+        if (tok.is_empty())
+        {
+            return verify_path_syntax_result_enum::valid_absolue_directory_path;
+        }
+    }
+    else if (is_abosolute)
     {
         coid::token cut = tok.cut_left_group(DIR_SEPARATORS);
         const char drive_char = cut.first_char();
