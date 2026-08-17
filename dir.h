@@ -184,7 +184,7 @@ public:
     /// @note This function only verifies the path's syntax; it does not check if the file or directory exists on the device.
     /// @note A path is absolute when it starts with a root component, which is "C:" for a drive
     ///       path and "\\\\server" for a unc path, the latter written with either separator style,
-    ///       "\\\\server\\share" and "//server/share" alike. @see get_path_component
+    ///       "\\\\server\\share" and "//server/share" alike. @see extract_path_component
     /// @note The server of a unc root, the share that may follow it and every component below are
     ///       all validated as names. A path holding only the root, or only the root and the share,
     ///       denotes a directory, the same way a bare drive does.
@@ -282,7 +282,7 @@ public:
             uint32 root_length = 0;
             coid::token dst_dir;
             coid::token remainder;
-            const bool valid = get_path_component_internal(source.get_token(), root_length, path_component_enum::last, dst_dir, remainder);
+            const bool valid = extract_path_component_internal(source.get_token(), root_length, path_component_enum::last, dst_dir, remainder);
             DASSERTX(valid, "dst_dir is not valid. How?");
 
             check << dst_dir;
@@ -646,71 +646,75 @@ public:
     };
 
     /// @brief Extracts the first or last path component and optionally retrieves the remaining path.
-    /// @param[in]  path          Input path (absolute or relative).
-    /// @param[in]  component     Specifies whether to extract the `first` or `last` component.
+    /// @param[in]      path      Input path (absolute or relative), the empty token once the walk
+    ///                           is over, which comes back as an empty component.
+    /// @param[in,out]  root_length Length of the root of @p path, the separator run behind it
+    ///                           included, zero when it is relative. Pass -1 to have it measured,
+    ///                           which is what a caller does for the first call. The call that
+    ///                           consumes the root sets it back to zero, so the same variable can
+    ///                           be handed to every call of a walk. @see get_path_root_length_internal
+    /// @param[in]      component Specifies whether to extract the `first` or `last` component.
     ///                           Defaults to `path_component_enum::last`.
-    /// @param[out] remainder     Optional pointer to receive the remaining path after removing the extracted component.
-    ///                           - **`path_component_enum::first`:** Strips the leading separator from the remainder.
-    ///                           - **`path_component_enum::last`:** Preserves the trailing separator on the remainder.
+    /// @param[out]     remainder Optional pointer to receive what is left of @p path once the
+    ///                           component is taken off, the empty token when nothing is left.
     ///                           Pass `&path` to perform an in-place update.
-    /// @param[out] is_root_component Optional pointer that receives true when the returned component
-    ///                           is the root component of the path, see the note on reassembly.
-    /// @return The extracted path component, or an empty token if @p path is not a valid (non-empty) path.
+    /// @param[out] is_root_component Optional pointer that receives true when the call consumed the
+    ///                           root of the path, which is the only way to tell an empty root from
+    ///                           no component at all.
+    /// @return The extracted path component. The empty token when the root is nothing but a
+    ///         separator run (the unix root), and when nothing is left to extract.
     ///
-    /// @pre @p path must not be empty; violating this asserts (DASSERTX) in debug builds. The call
-    ///      does not short-circuit, but still produces a well-defined (empty) result either way,
-    ///      via the same handling used for an all-separator path.
+    /// @note **Root component:** the root is the first component of the path, "C:" for a drive,
+    ///       "\\\\server" for a unc path, and the empty token for a path that starts at the root of
+    ///       the current volume. `first` returns it right away and leaves the whole of the path
+    ///       below it in @p remainder. `last` cuts below it, the root staying at the head of
+    ///       @p remainder until the remainder is the bare root and the next call consumes it.
+    ///
+    /// @note **Skipping the measuring:** a caller that knows what it is doing may pass zero instead
+    ///       of -1, saying the path carries no root the call could reach. That holds for a path
+    ///       known to be relative, and for a `last` component taken from a path known not to have
+    ///       been walked down to its root yet, the root only being in the way once the walk reaches
+    ///       it. The result is undefined when it does reach it: the root is cut into ordinary
+    ///       components, "C:" and "\\\\server" alike.
+    ///
+    /// @note **Separators:** only the separators sitting between the component and @p remainder are
+    ///       removed, a whole run of them at once, so neither side ever comes back with one on the
+    ///       side the two were split apart. A trailing separator of @p path stays on the remainder
+    ///       of a `first` component, a `last` one leaves nothing for it to stay on.
     ///
     /// @note **In-Place Modification:** @p path and @p remainder can safely reference
-    ///       the exact same object (e.g., `get_path_component(p, &p)`).
+    ///       the exact same object (e.g., `extract_path_component(p, root, last, &p)`).
     ///
-    /// @note **Root path:** if @p path consists solely of separator character(s) (e.g. the POSIX
-    ///       root "/"), there is no component to peel off. Matching POSIX `dirname()`/`basename()`
-    ///       (both of which return "/" for input "/"), both the returned component and
-    ///       @p remainder are set to @p path unchanged, regardless of @p component.
-    ///
-    /// @note **UNC path (Windows only):** "\\\\server" is the root component of a unc path, the
-    ///       counterpart of the "C:" of a drive path. The share below it is an ordinary component.
-    ///       `first` returns "\\\\server" and leaves the share at the head of @p remainder,
-    ///       `last` peels down to the root and leaves @p remainder empty once it is reached,
-    ///       the same way a drive does. Both separator styles are recognized, "\\\\server" and
-    ///       "//server" alike.
-    ///
-    /// @note **Reassembly:** the components of a path come back in a form that concatenates back
-    ///       into it, `root << separator() << component << separator() << ...`. The root component
-    ///       is "C:" for a drive, "\\\\server" for a unc path, and the empty string for a path that
-    ///       starts at the root of the current volume, which is how "/a/b" comes back together.
-    ///
-    /// @note **Root component:** @p is_root_component tells the root apart from an ordinary one,
-    ///       which the returned token alone cannot do, an empty root looking like no component at
-    ///       all. It is set for the three roots above and for a path made solely of separators.
-    ///       Only `first` can reach the root of a relative-to-volume path, `last` walks down to it
-    ///       for a drive and for a unc path, where it comes with an empty remainder.
+    /// @note **Reassembly:** the components come back without separators, so they concatenate back
+    ///       into the path as `root << separator() << component << separator() << ...`, the empty
+    ///       root of a volume rooted path being what puts the leading separator back in place.
     ///
     /// @example
+    ///   uint32 root = -1;       //ask for the root to be measured
     ///   coid::token rem;
     ///
-    ///   // Extract LAST: trailing separator stays attached to the remaining directory path
-    ///   auto last = get_path_component("foo/bar/baz.txt", path_component_enum::last, &rem);
-    ///   // last == "baz.txt", rem == "foo/bar/"
+    ///   // Extract LAST: the separator between the two is removed with it
+    ///   auto last = extract_path_component("foo/bar/baz.txt", root, path_component_enum::last, &rem);
+    ///   // last == "baz.txt", rem == "foo/bar", root == 0
     ///
-    ///   // Extract FIRST: leading separator is stripped from the remainder
-    ///   auto first = get_path_component("foo/bar/baz.txt", path_component_enum::first, &rem);
+    ///   // Extract FIRST: the separator behind the component is removed with it
+    ///   root = -1;
+    ///   auto first = extract_path_component("foo/bar/baz.txt", root, path_component_enum::first, &rem);
     ///   // first == "foo", rem == "bar/baz.txt"
     ///
-    ///   // Absolute path: the leading separator stays attached to the remainder, same as any other
-    ///   auto base = get_path_component("/a", path_component_enum::last, &rem);
-    ///   // base == "a", rem == "/"
-    ///
-    ///   // Root path: nothing to split, both sides come back as "/"
-    ///   auto root = get_path_component("/", path_component_enum::last, &rem);
-    ///   // root == "/", rem == "/"
-    ///
-    ///   // Root component: the empty first component of a path starting at the volume root
+    ///   // The root is the first component, and the call consumes it
     ///   bool is_root = false;
-    ///   auto vol = get_path_component("/a/b", path_component_enum::first, &rem, &is_root);
-    ///   // vol == "", rem == "a/b", is_root == true
-    static coid::token get_path_component(
+    ///   root = -1;
+    ///   auto drive = extract_path_component("C:/a/b", root, path_component_enum::first, &rem, &is_root);
+    ///   // drive == "C:", rem == "a/b", is_root == true, root == 0
+    ///
+    ///   // Walking a path down, the same root length carried through it
+    ///   root = -1;
+    ///   coid::token p = "C:/a/b";
+    ///   auto c = extract_path_component(p, root, path_component_enum::last, &p);   // c == "b",   p == "C:/a"
+    ///   c = extract_path_component(p, root, path_component_enum::last, &p);        // c == "a",   p == "C:"
+    ///   c = extract_path_component(p, root, path_component_enum::last, &p);        // c == "C:",  p == ""
+    static coid::token extract_path_component(
         const coid::token& path,
         uint32& root_length,
         path_component_enum component = path_component_enum::last,
@@ -770,7 +774,7 @@ protected:
     ///       the bare root and the next call consumes it.
     /// @note Components are always returned without separators with exception of root UNC path on Windows system with two leading separators
     /// @note Remainder are always returned without separator that was between the returned component and remainder
-    static bool get_path_component_internal(
+    static bool extract_path_component_internal(
         const coid::token& path,
         uint32& root_length_in_out,
         path_component_enum component,

@@ -754,7 +754,7 @@ uint64 directory::calculate_directory_size(const coid::token& path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-coid::token directory::get_path_component(const coid::token& path, uint32& root_length, path_component_enum component, coid::token* remainder, bool* is_root_component)
+coid::token directory::extract_path_component(const coid::token& path, uint32& root_length, path_component_enum component, coid::token* remainder, bool* is_root_component)
 {
     if (root_length == -1)
     {
@@ -769,14 +769,14 @@ coid::token directory::get_path_component(const coid::token& path, uint32& root_
     //does not tell it apart, the unix root being the only root that comes back empty
     const bool had_root = root_length != 0;
 
-    const bool valid = get_path_component_internal(path, root_length, component, result, remainder_ref);
+    const bool valid = extract_path_component_internal(path, root_length, component, result, remainder_ref);
     if (is_root_component) *is_root_component = valid && had_root && root_length == 0;
 
     return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::get_path_component_internal( 
+bool directory::extract_path_component_internal( 
     const coid::token& path,
     uint32& root_length_in_out,
     path_component_enum component,
@@ -846,7 +846,7 @@ bool directory::do_append_compact_internal(token path, charstr& result_in_out, b
 
     while (path.is_set())
     {
-        component = get_path_component(path, root_length, path_component_enum::first, &path);
+        component = extract_path_component(path, root_length, path_component_enum::first, &path);
 
         if (normalize_separators_only)
         {
@@ -878,7 +878,7 @@ bool directory::do_append_compact_internal(token path, charstr& result_in_out, b
                 }
                 else // Cut off last component from result
                 {
-                    token cutoff = get_path_component(result_in_out, root_length, path_component_enum::last);
+                    token cutoff = extract_path_component(result_in_out, root_length, path_component_enum::last);
                     if (cutoff.len() == result_in_out.len() - 1)
                     {
                         result_in_out.resize(0);
@@ -945,7 +945,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
         // get the first compomonent that is not '.'
         do
         {
-            root_component = get_path_component(rel_path, root_len, path_component_enum::first, &rel_path, &is_root_ref);
+            root_component = extract_path_component(rel_path, root_len, path_component_enum::first, &rel_path, &is_root_ref);
         } while(root_component == CURRENT_DIR_SEGMENT);
 
         result = root_component;

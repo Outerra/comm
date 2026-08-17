@@ -13,10 +13,10 @@ struct directory_tests
     static void test_directory_move();
     static void test_get_path_root_length_internal();
     static void test_do_append_compact_internal();
-    static void test_get_path_component_internal();
-    static void test_get_path_component();
-    static void test_get_path_component_root();
-    static void test_get_path_component_unc();
+    static void test_extract_path_component_internal();
+    static void test_extract_path_component();
+    static void test_extract_path_component_root();
+    static void test_extract_path_component_unc();
     static void test_append_path();
     static void test_make_path();
     static void test_compact_path();
@@ -395,7 +395,7 @@ void directory_tests::test_directory_move()
         "Cleanup: failed to remove temporary root directory for move tests");
 }
 
-void directory_tests::test_get_path_component()
+void directory_tests::test_extract_path_component()
 {
     using coid::directory;
     using component = coid::directory::path_component_enum;
@@ -408,7 +408,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("foo/bar/baz.txt"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("foo/bar/baz.txt"_T, root_length, component::last, &remainder);
         DASSERTX(last == "baz.txt"_T, "Last component should be the file name");
         DASSERTX(remainder == "foo/bar"_T, "Remainder for `last` should come back without a trailing separator");
         DASSERTX(root_length == 0, "A relative path should measure no root");
@@ -418,7 +418,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token first = directory::get_path_component("foo/bar/baz.txt"_T, root_length, component::first, &remainder);
+        coid::token first = directory::extract_path_component("foo/bar/baz.txt"_T, root_length, component::first, &remainder);
         DASSERTX(first == "foo"_T, "First component should be the leading segment");
         DASSERTX(remainder == "bar/baz.txt"_T, "Remainder for `first` should not have a leading separator");
     }
@@ -428,7 +428,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("foo\\bar\\baz.txt"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("foo\\bar\\baz.txt"_T, root_length, component::last, &remainder);
         DASSERTX(last == "baz.txt"_T, "Last component should be the file name (backslash separators)");
         DASSERTX(remainder == "foo\\bar"_T, "Remainder should come back without the trailing backslash separator");
     }
@@ -437,7 +437,7 @@ void directory_tests::test_get_path_component()
         // no '/' present, so the whole string is a single component; backslash must not split it
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("foo\\bar\\baz.txt"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("foo\\bar\\baz.txt"_T, root_length, component::last, &remainder);
         DASSERTX(last == "foo\\bar\\baz.txt"_T, "Backslash should not act as a separator on non-Windows systems");
         DASSERTX(remainder.is_empty(), "No '/' present, so there is nothing to split off into a remainder");
     }
@@ -447,7 +447,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("foo/bar/"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("foo/bar/"_T, root_length, component::last, &remainder);
         DASSERTX(last == "bar"_T, "Pre-existing trailing separator should not produce an empty last component");
         DASSERTX(remainder == "foo"_T, "Remainder should come back without a trailing separator");
     }
@@ -456,7 +456,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("baz.txt"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("baz.txt"_T, root_length, component::last, &remainder);
         DASSERTX(last == "baz.txt"_T, "Single-component path should be returned whole for `last`");
         DASSERTX(remainder.is_empty(), "Remainder should be empty when there is no separator to split on");
     }
@@ -464,7 +464,7 @@ void directory_tests::test_get_path_component()
     // --- remainder left null (default) should not fault ---
     {
         uint32 root_length = measure;
-        coid::token last = directory::get_path_component("foo/bar/baz.txt"_T, root_length);
+        coid::token last = directory::extract_path_component("foo/bar/baz.txt"_T, root_length);
         DASSERTX(last == "baz.txt"_T, "Default call without a remainder should still return the last component");
     }
 
@@ -472,7 +472,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token p = "foo/bar/baz.txt"_T;
-        coid::token last = directory::get_path_component(p, root_length, component::last, &p);
+        coid::token last = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(last == "baz.txt"_T, "In-place call should still return the correct last component");
         DASSERTX(p == "foo/bar"_T, "In-place call should leave the aliased path holding the remainder");
     }
@@ -480,7 +480,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token p = "foo/bar/baz.txt"_T;
-        coid::token first = directory::get_path_component(p, root_length, component::first, &p);
+        coid::token first = directory::extract_path_component(p, root_length, component::first, &p);
         DASSERTX(first == "foo"_T, "In-place call should still return the correct first component");
         DASSERTX(p == "bar/baz.txt"_T, "In-place call should leave the aliased path holding the remainder");
     }
@@ -489,7 +489,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("a"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("a"_T, root_length, component::last, &remainder);
         DASSERTX(comp == "a"_T, "Single-character relative path should be returned whole");
         DASSERTX(remainder.is_empty(), "Remainder for a single-character path should be empty");
     }
@@ -497,7 +497,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("a/"_T, root_length, component::first, &remainder);
+        coid::token comp = directory::extract_path_component("a/"_T, root_length, component::first, &remainder);
         DASSERTX(comp == "a"_T, "\"a/\" should yield \"a\" as the first component");
         DASSERTX(remainder.is_empty(), "Remainder for \"a/\" should be empty, not the separator itself");
     }
@@ -506,7 +506,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component(""_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component(""_T, root_length, component::last, &remainder);
         DASSERTX(comp.is_empty(), "An empty path has no component to hand back");
         DASSERTX(remainder.is_empty(), "An empty path leaves nothing over either");
     }
@@ -516,14 +516,14 @@ void directory_tests::test_get_path_component()
         uint32 root_length = measure;
         coid::token p = "a/b/c"_T;
 
-        coid::token c = directory::get_path_component(p, root_length, component::first, &p);
+        coid::token c = directory::extract_path_component(p, root_length, component::first, &p);
         DASSERTX(c == "a"_T, "The walk should start at the first component");
         DASSERTX(p == "b/c"_T, "The remainder should be the rest of the path");
 
-        c = directory::get_path_component(p, root_length, component::first, &p);
+        c = directory::extract_path_component(p, root_length, component::first, &p);
         DASSERTX(c == "b"_T, "The walk should continue with the next component");
 
-        c = directory::get_path_component(p, root_length, component::first, &p);
+        c = directory::extract_path_component(p, root_length, component::first, &p);
         DASSERTX(c == "c"_T, "The walk should end on the last component");
         DASSERTX(p.is_empty(), "The remainder should be empty once the last component is taken");
     }
@@ -534,7 +534,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("C:"_T, root_length, component::last, &remainder);
         DASSERTX(comp == "C:"_T, "A bare drive is the root, and comes back whole");
         DASSERTX(remainder.is_empty(), "Remainder for a bare \"C:\" should be empty");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -543,7 +543,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:\\"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("C:\\"_T, root_length, component::last, &remainder);
         DASSERTX(comp == "C:"_T, "A drive with a trailing separator should return the drive token");
         DASSERTX(remainder.is_empty(), "Remainder for a drive-with-separator path should be empty");
     }
@@ -552,7 +552,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/a/b"_T, root_length, component::first, &remainder);
+        coid::token comp = directory::extract_path_component("C:/a/b"_T, root_length, component::first, &remainder);
         DASSERTX(comp == "C:"_T, "The first component of a drive path is the drive");
         DASSERTX(remainder == "a/b"_T, "The remainder should hold the rest of the path");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -562,7 +562,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/a/b"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("C:/a/b"_T, root_length, component::last, &remainder);
         DASSERTX(comp == "b"_T, "The last component is an ordinary one, cut below the drive");
         DASSERTX(remainder == "C:/a"_T, "The drive should stay on the remainder");
         DASSERTX(root_length == 3, "The root has not been reached, its length should be left alone");
@@ -573,11 +573,11 @@ void directory_tests::test_get_path_component()
         uint32 root_length = measure;
         coid::token p = "C:\\a"_T;
 
-        coid::token comp = directory::get_path_component(p, root_length, component::last, &p);
+        coid::token comp = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(comp == "a"_T, "The component below the drive is an ordinary one");
         DASSERTX(p == "C:"_T, "The remainder should be the bare drive");
 
-        comp = directory::get_path_component(p, root_length, component::last, &p);
+        comp = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(comp == "C:"_T, "Walking down should end at the drive");
         DASSERTX(p.is_empty(), "There should be nothing left once the drive is reached");
     }
@@ -586,7 +586,7 @@ void directory_tests::test_get_path_component()
         // no dedicated drive handling: "C:/a" is an ordinary relative path outside windows
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/a"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("C:/a"_T, root_length, component::last, &remainder);
         DASSERTX(root_length == 0, "A drive is not a root outside windows");
         DASSERTX(comp == "a"_T, "The last component should be peeled off as usual");
         DASSERTX(remainder == "C:"_T, "The drive should be an ordinary component of the remainder");
@@ -599,7 +599,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("/a/b"_T, root_length, component::first, &remainder);
+        coid::token comp = directory::extract_path_component("/a/b"_T, root_length, component::first, &remainder);
         DASSERTX(comp.is_empty(), "The root of a path rooted at the volume root is an empty component");
         DASSERTX(remainder == "a/b"_T, "The remainder should hold the rest of the path");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -609,7 +609,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("/a"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("/a"_T, root_length, component::last, &remainder);
         DASSERTX(last == "a"_T, "basename(\"/a\") should be \"a\"");
         DASSERTX(remainder.is_empty(), "The separator run in front of the component goes with it, root and all");
     }
@@ -618,7 +618,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("/"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("/"_T, root_length, component::last, &remainder);
         DASSERTX(comp.is_empty(), "A bare root is an empty component");
         DASSERTX(remainder.is_empty(), "There is nothing below a bare root");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -627,7 +627,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("///"_T, root_length, component::first, &remainder);
+        coid::token comp = directory::extract_path_component("///"_T, root_length, component::first, &remainder);
         DASSERTX(comp.is_empty(), "A run of separators is all root, and an empty component all the same");
         DASSERTX(remainder.is_empty(), "There is nothing below a bare root");
     }
@@ -636,7 +636,7 @@ void directory_tests::test_get_path_component()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("//server/share/a"_T, root_length, component::last, &remainder);
+        coid::token comp = directory::extract_path_component("//server/share/a"_T, root_length, component::last, &remainder);
         DASSERTX(comp == "a"_T, "The last component should be peeled off as usual");
         DASSERTX(remainder == "//server/share"_T, "The remainder should come back without a trailing separator");
     }
@@ -645,7 +645,7 @@ void directory_tests::test_get_path_component()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void directory_tests::test_get_path_component_root()
+void directory_tests::test_extract_path_component_root()
 {
     using coid::directory;
     using component = coid::directory::path_component_enum;
@@ -659,7 +659,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("foo/bar/baz.txt"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("foo/bar/baz.txt"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "foo"_T, "The first component of a relative path is an ordinary one");
         DASSERTX(!is_root, "A relative path has no root component");
     }
@@ -668,7 +668,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("foo/bar/baz.txt"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("foo/bar/baz.txt"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "baz.txt"_T, "The last component of a relative path is an ordinary one");
         DASSERTX(!is_root, "A relative path has no root component");
     }
@@ -677,7 +677,7 @@ void directory_tests::test_get_path_component_root()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("foo/bar"_T, root_length, component::first, &remainder, nullptr);
+        coid::token comp = directory::extract_path_component("foo/bar"_T, root_length, component::first, &remainder, nullptr);
         DASSERTX(comp == "foo"_T, "The flag should be optional");
     }
 
@@ -688,7 +688,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "C:"_T, "A bare drive comes back whole");
         DASSERTX(is_root, "A drive should be reported as the root component");
     }
@@ -697,7 +697,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:\\"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:\\"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "C:"_T, "A drive root comes back as the drive");
         DASSERTX(is_root, "A drive should be reported as the root component");
     }
@@ -707,7 +707,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/a/b"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:/a/b"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "C:"_T, "The first component of a drive path is the drive");
         DASSERTX(remainder == "a/b"_T, "The remainder should hold the rest of the path");
         DASSERTX(is_root, "A drive heading a longer path should be reported as the root component");
@@ -717,7 +717,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/../a"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:/../a"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "C:"_T, "The first component is the drive, whatever follows it");
         DASSERTX(remainder == "../a"_T, "The remainder should hold the rest of the path");
         DASSERTX(is_root, "A drive followed by a parent segment should still be the root component");
@@ -727,7 +727,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:\\a\\b"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:\\a\\b"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "C:"_T, "The separator style should not matter");
         DASSERTX(is_root, "A drive heading a longer path should be reported as the root component");
     }
@@ -737,7 +737,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("C:/../a"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("C:/../a"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "a"_T, "The last component is an ordinary one");
         DASSERTX(!is_root, "A component below the drive is not the root");
     }
@@ -748,11 +748,11 @@ void directory_tests::test_get_path_component_root()
         bool is_root = true;
         coid::token p = "C:\\a"_T;
 
-        coid::token comp = directory::get_path_component(p, root_length, component::last, &p, &is_root);
+        coid::token comp = directory::extract_path_component(p, root_length, component::last, &p, &is_root);
         DASSERTX(comp == "a"_T, "The component below the drive is an ordinary one");
         DASSERTX(!is_root, "A component below the drive is not the root");
 
-        comp = directory::get_path_component(p, root_length, component::last, &p, &is_root);
+        comp = directory::extract_path_component(p, root_length, component::last, &p, &is_root);
         DASSERTX(comp == "C:"_T, "Walking down should end at the drive");
         DASSERTX(is_root, "The drive reached at the end is the root component");
     }
@@ -762,7 +762,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("\\\\server\\share\\a"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("\\\\server\\share\\a"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "\\\\server"_T, "The first component of a unc path is its root");
         DASSERTX(is_root, "The unc root should be reported as the root component");
     }
@@ -771,7 +771,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("\\\\server\\share\\a"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("\\\\server\\share\\a"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "a"_T, "The last component of a unc path is an ordinary one");
         DASSERTX(!is_root, "A component below the unc root is not the root");
     }
@@ -780,7 +780,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("\\\\server\\share"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("\\\\server\\share"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "share"_T, "The share is an ordinary component");
         DASSERTX(!is_root, "The share is not the root component");
     }
@@ -789,7 +789,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("\\\\server"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("\\\\server"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp == "\\\\server"_T, "A root only unc path comes back whole");
         DASSERTX(is_root, "The unc root should be reported as the root component");
     }
@@ -801,7 +801,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("/a/b"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("/a/b"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp.is_empty(), "The root component of a path starting at the volume root is empty");
         DASSERTX(remainder == "a/b"_T, "The remainder should hold the rest of the path");
         DASSERTX(is_root, "An empty first component should be reported as the root component");
@@ -812,7 +812,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = false;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("/"_T, root_length, component::last, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("/"_T, root_length, component::last, &remainder, &is_root);
         DASSERTX(comp.is_empty(), "A bare root is an empty component");
         DASSERTX(is_root, "A bare root should be reported as the root component");
     }
@@ -822,7 +822,7 @@ void directory_tests::test_get_path_component_root()
         uint32 root_length = measure;
         bool is_root = true;
         coid::token remainder;
-        coid::token comp = directory::get_path_component("a/b"_T, root_length, component::first, &remainder, &is_root);
+        coid::token comp = directory::extract_path_component("a/b"_T, root_length, component::first, &remainder, &is_root);
         DASSERTX(comp == "a"_T, "A relative path starts with an ordinary component");
         DASSERTX(!is_root, "A relative path has no root component");
     }
@@ -832,7 +832,7 @@ void directory_tests::test_get_path_component_root()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void directory_tests::test_get_path_component_unc()
+void directory_tests::test_extract_path_component_unc()
 {
 #ifdef SYSTYPE_WIN
     using coid::directory;
@@ -844,7 +844,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token first = directory::get_path_component("\\\\server\\share\\a\\b"_T, root_length, component::first, &remainder);
+        coid::token first = directory::extract_path_component("\\\\server\\share\\a\\b"_T, root_length, component::first, &remainder);
         DASSERTX(first == "\\\\server"_T, "The first component of a unc path should be its root");
         DASSERTX(remainder == "share\\a\\b"_T, "Remainder for `first` should not have a leading separator");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -854,7 +854,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder = "share\\a\\b"_T;
-        coid::token first = directory::get_path_component(remainder, root_length, component::first, &remainder);
+        coid::token first = directory::extract_path_component(remainder, root_length, component::first, &remainder);
         DASSERTX(first == "share"_T, "The share should come back as a component of its own");
         DASSERTX(remainder == "a\\b"_T, "Remainder for `first` should not have a leading separator");
     }
@@ -863,7 +863,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token first = directory::get_path_component("//server/share/a/b"_T, root_length, component::first, &remainder);
+        coid::token first = directory::extract_path_component("//server/share/a/b"_T, root_length, component::first, &remainder);
         DASSERTX(first == "//server"_T, "A unc path written with forward slashes should be recognized too");
         DASSERTX(remainder == "share/a/b"_T, "Remainder for `first` should not have a leading separator");
     }
@@ -872,7 +872,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("\\\\server\\share\\a\\b"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("\\\\server\\share\\a\\b"_T, root_length, component::last, &remainder);
         DASSERTX(last == "b"_T, "The last component should be cut off as usual");
         DASSERTX(remainder == "\\\\server\\share\\a"_T, "The remainder should come back without a trailing separator");
     }
@@ -880,7 +880,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("\\\\server\\share\\a"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("\\\\server\\share\\a"_T, root_length, component::last, &remainder);
         DASSERTX(last == "a"_T, "The only component below the share should be cut off");
         DASSERTX(remainder == "\\\\server\\share"_T, "The remainder should come back without a trailing separator");
     }
@@ -889,7 +889,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("\\\\server\\share"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("\\\\server\\share"_T, root_length, component::last, &remainder);
         DASSERTX(last == "share"_T, "The share should be cut off like any other component");
         DASSERTX(remainder == "\\\\server"_T, "The remainder should be the bare root the next call consumes");
     }
@@ -898,7 +898,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("\\\\server"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("\\\\server"_T, root_length, component::last, &remainder);
         DASSERTX(last == "\\\\server"_T, "The root should be the last component that can be cut off");
         DASSERTX(remainder.is_empty(), "Remainder for a root only path should be empty");
     }
@@ -906,7 +906,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token first = directory::get_path_component("\\\\server"_T, root_length, component::first, &remainder);
+        coid::token first = directory::extract_path_component("\\\\server"_T, root_length, component::first, &remainder);
         DASSERTX(first == "\\\\server"_T, "A root only path has the root as its only component");
         DASSERTX(remainder.is_empty(), "Remainder for a root only path should be empty");
     }
@@ -915,7 +915,7 @@ void directory_tests::test_get_path_component_unc()
     {
         uint32 root_length = measure;
         coid::token remainder;
-        coid::token last = directory::get_path_component("\\\\server\\share\\"_T, root_length, component::last, &remainder);
+        coid::token last = directory::extract_path_component("\\\\server\\share\\"_T, root_length, component::last, &remainder);
         DASSERTX(last == "share"_T, "A trailing separator should not produce an empty component");
         DASSERTX(remainder == "\\\\server"_T, "The remainder should be the bare root");
     }
@@ -926,10 +926,10 @@ void directory_tests::test_get_path_component_unc()
         coid::token p = "\\\\server\\share\\a\\b"_T;
         coid::charstr rebuilt;
 
-        rebuilt << directory::get_path_component(p, root_length, component::first, &p);
+        rebuilt << directory::extract_path_component(p, root_length, component::first, &p);
 
         while (!p.is_empty())
-            rebuilt << directory::separator() << directory::get_path_component(p, root_length, component::first, &p);
+            rebuilt << directory::separator() << directory::extract_path_component(p, root_length, component::first, &p);
 
         DASSERTX(coid::token(rebuilt) == "\\\\server\\share\\a\\b"_T, "The components should concatenate back into the original path");
     }
@@ -939,16 +939,16 @@ void directory_tests::test_get_path_component_unc()
         uint32 root_length = measure;
         coid::token p = "\\\\server\\share\\a\\b"_T;
 
-        coid::token c = directory::get_path_component(p, root_length, component::last, &p);
+        coid::token c = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(c == "b"_T, "In-place cutting should return the last component");
 
-        c = directory::get_path_component(p, root_length, component::last, &p);
+        c = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(c == "a"_T, "In-place cutting should continue with the next component");
 
-        c = directory::get_path_component(p, root_length, component::last, &p);
+        c = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(c == "share"_T, "In-place cutting should continue with the share");
 
-        c = directory::get_path_component(p, root_length, component::last, &p);
+        c = directory::extract_path_component(p, root_length, component::last, &p);
         DASSERTX(c == "\\\\server"_T, "In-place cutting should end with the root");
         DASSERTX(p.is_empty(), "The aliased remainder should be empty once the root is reached");
     }
@@ -1364,7 +1364,7 @@ void directory_tests::test_get_path_root_length_internal()
     }
 #endif
 
-    // --- what is measured here is what get_path_component_internal is fed, the part below the root
+    // --- what is measured here is what extract_path_component_internal is fed, the part below the root
     // never starting with a separator ---
     {
         const coid::token path = "a/b"_T;
@@ -1372,7 +1372,7 @@ void directory_tests::test_get_path_root_length_internal()
 
         coid::token result;
         coid::token remainder;
-        const bool ok = directory::get_path_component_internal(path, root_length, directory::path_component_enum::first, result, remainder);
+        const bool ok = directory::extract_path_component_internal(path, root_length, directory::path_component_enum::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "A relative path is cut whole");
         DASSERTX(remainder == "b"_T, "The remainder should hold the rest of the path");
@@ -1389,7 +1389,7 @@ void directory_tests::test_get_path_root_length_internal()
 
         coid::token result;
         coid::token remainder;
-        const bool ok = directory::get_path_component_internal(path, root_length, directory::path_component_enum::first, result, remainder);
+        const bool ok = directory::extract_path_component_internal(path, root_length, directory::path_component_enum::first, result, remainder);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result == "C:"_T, "The measured root should come back as the first component");
         DASSERTX(remainder == "a/b"_T, "The remainder should be the whole of the path below the root");
@@ -1407,12 +1407,12 @@ void directory_tests::test_get_path_root_length_internal()
             "The part below the root should never start with a separator");
 
         coid::token result;
-        bool ok = directory::get_path_component_internal(path, root_length, directory::path_component_enum::last, result, path);
+        bool ok = directory::extract_path_component_internal(path, root_length, directory::path_component_enum::last, result, path);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "share"_T, "The share is an ordinary component below the root");
         DASSERTX(path == "\\\\server"_T, "The run between the two should go with the component, leaving the bare root");
 
-        ok = directory::get_path_component_internal(path, root_length, directory::path_component_enum::last, result, path);
+        ok = directory::extract_path_component_internal(path, root_length, directory::path_component_enum::last, result, path);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result == "\\\\server"_T, "The measured root should come back whole, however it was written");
         DASSERTX(path.is_empty(), "There should be nothing left once the root is consumed");
@@ -1423,7 +1423,7 @@ void directory_tests::test_get_path_root_length_internal()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void directory_tests::test_get_path_component_internal()
+void directory_tests::test_extract_path_component_internal()
 {
     using coid::directory;
     using component = coid::directory::path_component_enum;
@@ -1441,7 +1441,7 @@ void directory_tests::test_get_path_component_internal()
     // --- the separator in front of a `last` component is removed with it ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar/baz.txt"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar/baz.txt"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "baz.txt"_T, "The last component should be the file name");
         DASSERTX(remainder == "foo/bar"_T, "The remainder should come back without a trailing separator");
@@ -1450,7 +1450,7 @@ void directory_tests::test_get_path_component_internal()
     // --- the separator behind a `first` component is removed with it ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar/baz.txt"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar/baz.txt"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "foo"_T, "The first component should be the leading segment");
         DASSERTX(remainder == "bar/baz.txt"_T, "The remainder should come back without a leading separator");
@@ -1459,7 +1459,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a relative path leaves the root length alone, there being no root to consume ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(root_length == 0, "A relative path should leave the root length at zero");
     }
@@ -1467,7 +1467,7 @@ void directory_tests::test_get_path_component_internal()
     // --- an empty path is what ends a walk, the call reporting that no component was left ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal(""_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal(""_T, root_length, component::last, result, remainder);
         DASSERTX(!ok, "An empty path should report that no component is left");
         DASSERTX(result.is_empty(), "There should be no component to hand back");
         DASSERTX(remainder.is_empty(), "There should be nothing left over either");
@@ -1476,7 +1476,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a single component path comes back whole, with an empty remainder that ends the walk ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("baz.txt"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("baz.txt"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "baz.txt"_T, "A single component path should be returned whole for `last`");
         DASSERTX(remainder.is_empty(), "The remainder should be empty when there is no separator to split on");
@@ -1484,7 +1484,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("baz.txt"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("baz.txt"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "baz.txt"_T, "A single component path should be returned whole for `first` too");
         DASSERTX(remainder.is_empty(), "The remainder should be empty when there is no separator to split on");
@@ -1493,7 +1493,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a single character component is a valid path, not a degenerate case ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("a"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "A single character path should be returned whole");
         DASSERTX(remainder.is_empty(), "The remainder for a single character path should be empty");
@@ -1503,7 +1503,7 @@ void directory_tests::test_get_path_component_internal()
     // for it to stay on ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar/"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar/"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "bar"_T, "A trailing separator should not produce an empty last component");
         DASSERTX(remainder == "foo"_T, "The remainder should come back without a trailing separator");
@@ -1513,7 +1513,7 @@ void directory_tests::test_get_path_component_internal()
     // between the component and the remainder is removed ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar/"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar/"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "foo"_T, "The first component should be the leading segment");
         DASSERTX(remainder == "bar/"_T, "The trailing separator of the input should stay on the remainder");
@@ -1521,7 +1521,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/b/c/"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("a/b/c/"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "The first component should be the leading segment");
         DASSERTX(remainder == "b/c/"_T, "Only the separator between the component and the remainder should be removed");
@@ -1531,7 +1531,7 @@ void directory_tests::test_get_path_component_internal()
     // so it goes either way and leaves nothing over ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("a/"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "A trailing separator should not swallow the only component");
         DASSERTX(remainder.is_empty(), "The remainder for \"a/\" should be empty, not the separator itself");
@@ -1539,7 +1539,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("a/"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "\"a/\" should yield \"a\" as the first component too");
         DASSERTX(remainder.is_empty(), "The remainder for \"a/\" (first) should be empty");
@@ -1548,7 +1548,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a whole run of separators is removed at once, wherever it sits ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a//b"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("a//b"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "b"_T, "A separator run should not produce an empty component");
         DASSERTX(remainder == "a"_T, "The whole run should be removed for `last`");
@@ -1556,7 +1556,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a//b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("a//b"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "A separator run should not produce an empty component");
         DASSERTX(remainder == "b"_T, "The whole run should be removed for `first`");
@@ -1565,7 +1565,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a trailing run is not a component either ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/b//"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("a/b//"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "b"_T, "A trailing separator run should not produce an empty component");
         DASSERTX(remainder == "a"_T, "The remainder should come back without a trailing separator");
@@ -1573,7 +1573,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a//b//c"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("a//b//c"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "a"_T, "A separator run should not produce an empty component");
         DASSERTX(remainder == "b//c"_T, "Only the run the component is taken across should be removed");
@@ -1583,14 +1583,14 @@ void directory_tests::test_get_path_component_internal()
 #ifdef SYSTYPE_WIN
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "baz.txt"_T, "The last component should be the file name (backslash separators)");
         DASSERTX(remainder == "foo\\bar"_T, "The remainder should come back without the trailing backslash separator");
     }
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "foo"_T, "The first component should be the leading segment (backslash separators)");
         DASSERTX(remainder == "bar\\baz.txt"_T, "The remainder should not have a leading backslash separator");
     }
@@ -1598,7 +1598,7 @@ void directory_tests::test_get_path_component_internal()
     // --- the two separator styles mix freely ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo/bar\\baz.txt"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo/bar\\baz.txt"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "baz.txt"_T, "Mixed separators should be recognized alike");
         DASSERTX(remainder == "foo/bar"_T, "The separator style inside the remainder should be left alone");
     }
@@ -1606,14 +1606,14 @@ void directory_tests::test_get_path_component_internal()
     // --- a trailing backslash behaves the same way a trailing slash does ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo\\bar\\"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo\\bar\\"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "bar"_T, "A trailing backslash should not produce an empty last component");
         DASSERTX(remainder == "foo"_T, "The remainder should come back without a trailing backslash");
     }
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("foo\\bar\\"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("foo\\bar\\"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "foo"_T, "The first component should be the leading segment");
         DASSERTX(remainder == "bar\\"_T, "The trailing backslash of the input should stay on the remainder");
     }
@@ -1621,7 +1621,7 @@ void directory_tests::test_get_path_component_internal()
     {
         // no '/' present, so the whole string is a single component; backslash must not split it
         root_length = 0;
-        ok = directory::get_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("foo\\bar\\baz.txt"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "foo\\bar\\baz.txt"_T, "Backslash should not act as a separator on non-Windows systems");
         DASSERTX(remainder.is_empty(), "No '/' present, so there is nothing to split off into a remainder");
     }
@@ -1630,21 +1630,21 @@ void directory_tests::test_get_path_component_internal()
     // --- dot segments are ordinary components, returned as they are and never resolved ---
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("./a"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("./a"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "."_T, "The current dir segment should come back as an ordinary component");
         DASSERTX(remainder == "a"_T, "The remainder should be the rest of the path");
     }
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/../b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("a/../b"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "a"_T, "The parent segment should not consume the component in front of it");
         DASSERTX(remainder == "../b"_T, "The parent segment should be left in the remainder unresolved");
     }
 
     {
         root_length = 0;
-        ok = directory::get_path_component_internal("a/.."_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("a/.."_T, root_length, component::last, result, remainder);
         DASSERTX(result == ".."_T, "The parent segment should come back as an ordinary component");
         DASSERTX(remainder == "a"_T, "The remainder should be the path in front of it, unresolved");
     }
@@ -1653,7 +1653,7 @@ void directory_tests::test_get_path_component_internal()
     {
         coid::token p = "foo/bar/baz.txt"_T;
         root_length = 0;
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(result == "baz.txt"_T, "An in-place call should still return the correct last component");
         DASSERTX(p == "foo/bar"_T, "An in-place call should leave the aliased path holding the remainder");
     }
@@ -1661,7 +1661,7 @@ void directory_tests::test_get_path_component_internal()
     {
         coid::token p = "foo/bar/baz.txt"_T;
         root_length = 0;
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(result == "foo"_T, "An in-place call should still return the correct first component");
         DASSERTX(p == "bar/baz.txt"_T, "An in-place call should leave the aliased path holding the remainder");
     }
@@ -1671,19 +1671,19 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "a/b/c"_T;
         root_length = 0;
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should start at the first component");
         DASSERTX(p == "b/c"_T, "The remainder should be the rest of the path");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "b"_T, "The walk should continue with the next component");
         DASSERTX(p == "c"_T, "The remainder should be the rest of the path");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "c"_T, "The walk should end on the last component");
         DASSERTX(p.is_empty(), "The remainder should be empty once the last component is taken");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(!ok, "One call past the end should report that no component is left");
     }
 
@@ -1691,15 +1691,15 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "a/b/c"_T;
         root_length = 0;
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "c"_T, "The backwards walk should start at the last component");
         DASSERTX(p == "a/b"_T, "The remainder should come back without a trailing separator");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "b"_T, "The backwards walk should continue with the next component");
         DASSERTX(p == "a"_T, "The remainder should come back without a trailing separator");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "a"_T, "The backwards walk should end on the first component");
         DASSERTX(p.is_empty(), "The remainder should be empty once the first component is taken");
     }
@@ -1709,15 +1709,15 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "a//b/c/"_T;
         root_length = 0;
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "c"_T, "The trailing separator should not produce an empty component");
         DASSERTX(p == "a//b"_T, "The remainder should come back without a trailing separator");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "b"_T, "The walk should continue with the next component");
         DASSERTX(p == "a"_T, "The whole separator run should be removed with the component");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should end on the first component");
         DASSERTX(p.is_empty(), "The remainder should be empty once the first component is taken");
     }
@@ -1728,7 +1728,7 @@ void directory_tests::test_get_path_component_internal()
         coid::charstr rebuilt;
         root_length = 0;
 
-        while (directory::get_path_component_internal(p, root_length, component::first, result, p))
+        while (directory::extract_path_component_internal(p, root_length, component::first, result, p))
         {
             if (rebuilt.is_set())
                 rebuilt << '/';
@@ -1744,7 +1744,7 @@ void directory_tests::test_get_path_component_internal()
         coid::charstr rebuilt;
         root_length = 0;
 
-        while (directory::get_path_component_internal(p, root_length, component::first, result, p))
+        while (directory::extract_path_component_internal(p, root_length, component::first, result, p))
         {
             if (rebuilt.is_set())
                 rebuilt << '/';
@@ -1766,7 +1766,7 @@ void directory_tests::test_get_path_component_internal()
     // it, and the call consumes it: the root length comes back zeroed for the calls that follow ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/a/b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("C:/a/b"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result == "C:"_T, "The first component of a rooted path is the root");
         DASSERTX(remainder == "a/b"_T, "The remainder should be the whole of the path below the root");
@@ -1778,25 +1778,25 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "C:/a/b"_T;
         root_length = 3;
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "C:"_T, "The walk should start at the root");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should continue below the root");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(ok && result == "b"_T, "The walk should end on the last component");
         DASSERTX(p.is_empty(), "The remainder should be empty once the last component is taken");
 
-        ok = directory::get_path_component_internal(p, root_length, component::first, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::first, result, p);
         DASSERTX(!ok, "One call past the end should report that no component is left");
     }
 
     // --- a unc root keeps the two leading separators it is written with, they are a part of it ---
     {
         root_length = 9;
-        ok = directory::get_path_component_internal("//server/share/a"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("//server/share/a"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result == "//server"_T, "The first component of a unc path is the server, leading separators included");
         DASSERTX(remainder == "share/a"_T, "The share should be left at the head of the remainder");
@@ -1806,7 +1806,7 @@ void directory_tests::test_get_path_component_internal()
     // --- the separator run behind the root belongs to the root length, not to the component ---
     {
         root_length = 4;
-        ok = directory::get_path_component_internal("C://a"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("C://a"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "C:"_T, "The root should come back without the separator run behind it");
         DASSERTX(remainder == "a"_T, "The remainder should start below the run");
     }
@@ -1814,7 +1814,7 @@ void directory_tests::test_get_path_component_internal()
     // --- a trailing separator of the input is left alone here as well ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/a/b/"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("C:/a/b/"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "C:"_T, "The first component of a rooted path is the root");
         DASSERTX(remainder == "a/b/"_T, "The trailing separator of the input should stay on the remainder");
     }
@@ -1823,7 +1823,7 @@ void directory_tests::test_get_path_component_internal()
     // asked for, the root being consumed either way ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("C:/"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A path that is nothing but a root should still report a valid component");
         DASSERTX(result == "C:"_T, "A path that is nothing but a root should come back as the root");
         DASSERTX(remainder.is_empty(), "There should be nothing left once the root is reached");
@@ -1832,7 +1832,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 2;
-        ok = directory::get_path_component_internal("C:"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("C:"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "A root without a separator behind it should still report a valid component");
         DASSERTX(result == "C:"_T, "A root without a separator behind it should come back whole");
         DASSERTX(remainder.is_empty(), "There should be nothing left once the root is reached");
@@ -1842,7 +1842,7 @@ void directory_tests::test_get_path_component_internal()
     // root length is left alone here, the root not having been reached yet ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/a/b"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("C:/a/b"_T, root_length, component::last, result, remainder);
         DASSERTX(ok, "A component should have been extracted");
         DASSERTX(result == "b"_T, "The last component is an ordinary one, cut below the root");
         DASSERTX(remainder == "C:/a"_T, "The root should stay on the remainder");
@@ -1851,7 +1851,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/a/b/"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("C:/a/b/"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "b"_T, "A trailing separator should not produce an empty last component");
         DASSERTX(remainder == "C:/a"_T, "The root should stay on the remainder");
     }
@@ -1860,14 +1860,14 @@ void directory_tests::test_get_path_component_internal()
     // component, leaving the bare root, which the next call consumes ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:/a"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("C:/a"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "a"_T, "The only component below the root should be cut off");
         DASSERTX(remainder == "C:"_T, "The remainder should be the bare root the next call consumes");
     }
 
     {
         root_length = 4;
-        ok = directory::get_path_component_internal("C://a"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("C://a"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "a"_T, "The component below the root should be cut off");
         DASSERTX(remainder == "C:"_T, "The whole run between the two should go with the component");
     }
@@ -1877,15 +1877,15 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "C:/a/b"_T;
         root_length = 3;
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "b"_T, "The walk should start at the last component");
         DASSERTX(p == "C:/a"_T, "The root should stay at the head of the remainder");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should continue with the next component");
         DASSERTX(p == "C:"_T, "The remainder should be the bare root");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "C:"_T, "The walk should end at the root");
         DASSERTX(p.is_empty(), "There should be nothing left once the root is consumed");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -1896,15 +1896,15 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "//server/share/a"_T;
         root_length = 9;
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should start at the last component");
         DASSERTX(p == "//server/share"_T, "The root should stay at the head of the remainder");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "share"_T, "The share is an ordinary component below the root");
         DASSERTX(p == "//server"_T, "The remainder should be the bare root");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "//server"_T, "The walk should end at the root");
         DASSERTX(p.is_empty(), "There should be nothing left once the root is consumed");
         DASSERTX(root_length == 0, "The consumed root should leave the root length at zero");
@@ -1913,21 +1913,21 @@ void directory_tests::test_get_path_component_internal()
     // --- the separator style of the root is no more looked at than the rest of it ---
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("C:\\a\\b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("C:\\a\\b"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "C:"_T, "The first component of a rooted path is the root");
         DASSERTX(remainder == "a\\b"_T, "The remainder should be the whole of the path below the root");
     }
 
     {
         root_length = 9;
-        ok = directory::get_path_component_internal("\\\\server\\share\\a"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("\\\\server\\share\\a"_T, root_length, component::first, result, remainder);
         DASSERTX(result == "\\\\server"_T, "The first component of a unc path is the server, leading separators included");
         DASSERTX(remainder == "share\\a"_T, "The share should be left at the head of the remainder");
     }
 
     {
         root_length = 9;
-        ok = directory::get_path_component_internal("\\\\server\\share\\a"_T, root_length, component::last, result, remainder);
+        ok = directory::extract_path_component_internal("\\\\server\\share\\a"_T, root_length, component::last, result, remainder);
         DASSERTX(result == "a"_T, "The last component is an ordinary one, cut below the root");
         DASSERTX(remainder == "\\\\server\\share"_T, "The root should stay on the remainder");
     }
@@ -1936,7 +1936,7 @@ void directory_tests::test_get_path_component_internal()
     // which is what tells a root apart from an ordinary one ---
     {
         root_length = 1;
-        ok = directory::get_path_component_internal("/a/b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("/a/b"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result.is_empty(), "The unix root is an empty component");
         DASSERTX(remainder == "a/b"_T, "The remainder should be the whole of the path below the root");
@@ -1945,7 +1945,7 @@ void directory_tests::test_get_path_component_internal()
 
     {
         root_length = 3;
-        ok = directory::get_path_component_internal("///a/b"_T, root_length, component::first, result, remainder);
+        ok = directory::extract_path_component_internal("///a/b"_T, root_length, component::first, result, remainder);
         DASSERTX(ok, "Consuming the root should report a valid component");
         DASSERTX(result.is_empty(), "A whole leading run is the root, and an empty component all the same");
         DASSERTX(remainder == "a/b"_T, "The remainder should be the whole of the path below the root");
@@ -1957,11 +1957,11 @@ void directory_tests::test_get_path_component_internal()
         coid::token p = "/a/b"_T;
         root_length = 1;
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "b"_T, "The walk should start at the last component");
         DASSERTX(p == "/a"_T, "The leading separator should stay on the remainder");
 
-        ok = directory::get_path_component_internal(p, root_length, component::last, result, p);
+        ok = directory::extract_path_component_internal(p, root_length, component::last, result, p);
         DASSERTX(ok && result == "a"_T, "The walk should continue with the next component");
         DASSERTX(p.is_empty(), "The separator run in front of the component goes with it, root and all");
     }
@@ -3235,16 +3235,16 @@ void directory_tests::test_build_path_internal()
 
 void run_directory_tests()
 {
-    directory_tests::test_get_path_component_internal();
+    directory_tests::test_extract_path_component_internal();
     directory_tests::test_get_path_root_length_internal();
     directory_tests::test_do_append_compact_internal();
     directory_tests::test_is_same_path();
     directory_tests::test_directory_delete();
     directory_tests::test_directory_move();
     directory_tests::test_verify_path_syntax();
-    directory_tests::test_get_path_component();
-    directory_tests::test_get_path_component_root();
-    directory_tests::test_get_path_component_unc();
+    directory_tests::test_extract_path_component();
+    directory_tests::test_extract_path_component_root();
+    directory_tests::test_extract_path_component_unc();
     directory_tests::test_build_path_internal();
     directory_tests::test_compact_path();
     directory_tests::test_create_compact_path();
