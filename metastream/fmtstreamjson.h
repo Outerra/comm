@@ -82,7 +82,7 @@ public:
     ~fmtstreamjson()
     {}
 
-    /// @param enable_esc_strings if true, strings with special characters are written as \"..\\." and normal strings are "..\." without escape sequences
+    /// @param enable_esc_strings if true, strings with special characters start with \" (example: \"..\\.") and strings not containing any special characters are written without escape sequences
     void init(binstream* br, binstream* bw, bool enable_esc_strings)
     {
         if (bw)  bind(*bw, BIND_OUTPUT);
@@ -96,26 +96,35 @@ public:
         //add anything that can be a part of identifier or value (strings are treated separately)
         lexid = _tokenizer.def_group("id", "0..9a..zA..Z_.+-");
 
-        int er = _tokenizer.def_escape("esc", '\\');
-        _tokenizer.def_escape_pair(er, "\"", "\"");
-        _tokenizer.def_escape_pair(er, "'", "\'");
-        _tokenizer.def_escape_pair(er, "\\", "\\");
-        _tokenizer.def_escape_pair(er, "b", "\b");
-        _tokenizer.def_escape_pair(er, "f", "\f");
-        _tokenizer.def_escape_pair(er, "n", "\n");
-        _tokenizer.def_escape_pair(er, "r", "\r");
-        _tokenizer.def_escape_pair(er, "t", "\t");
-        _tokenizer.def_escape_pair(er, "0", token("\0", 1));
+        int erq = _tokenizer.def_escape("esc_quotes", '\\');
+        _tokenizer.def_escape_pair(erq, "\"", "\"");
+        _tokenizer.def_escape_pair(erq, "\\", "\\");
+        _tokenizer.def_escape_pair(erq, "b", "\b");
+        _tokenizer.def_escape_pair(erq, "f", "\f");
+        _tokenizer.def_escape_pair(erq, "n", "\n");
+        _tokenizer.def_escape_pair(erq, "r", "\r");
+        _tokenizer.def_escape_pair(erq, "t", "\t");
+        _tokenizer.def_escape_pair(erq, "0", token("\0", 1));
+
+        int era = _tokenizer.def_escape("esc_apos", '\\');
+        _tokenizer.def_escape_pair(era, "'", "\'");
+        _tokenizer.def_escape_pair(era, "\\", "\\");
+        _tokenizer.def_escape_pair(era, "b", "\b");
+        _tokenizer.def_escape_pair(era, "f", "\f");
+        _tokenizer.def_escape_pair(era, "n", "\n");
+        _tokenizer.def_escape_pair(era, "r", "\r");
+        _tokenizer.def_escape_pair(era, "t", "\t");
+        _tokenizer.def_escape_pair(era, "0", token("\0", 1));
 
         if (_ext_esc_string) {
-            lexstre = _tokenizer.def_string("str", "\\\"", "\"", "esc");
-            lexchre = _tokenizer.def_string("str", "\\'", "'", "esc");
+            lexstre = _tokenizer.def_string("str", "\\\"", "\"", "esc_quotes");
+            lexchre = _tokenizer.def_string("str", "\\'", "'", "esc_apos");
             lexstr = _tokenizer.def_string("str", "\"", "\"", "");
             lexchr = _tokenizer.def_string("str", "\'", "\'", "");
         }
         else {
-            lexstr = _tokenizer.def_string("str", "\"", "\"", "esc");
-            lexchr = _tokenizer.def_string("str", "\'", "\'", "esc");
+            lexstr = _tokenizer.def_string("str", "\"", "\"", "esc_quotes");
+            lexchr = _tokenizer.def_string("str", "\'", "\'", "esc_apos");
             lexstre = INT_MIN;
             lexchre = INT_MIN;
         }

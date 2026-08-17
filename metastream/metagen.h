@@ -1463,7 +1463,7 @@ inline token metagen::Varx::write_buf(metagen& mg, const dynarray<Attribute>* at
         buf.reset();
     uint oldbufsize = buf.len();
 
-    auto append = [&](const token& t) { if (t) { if (escape) buf.append_escaped(t); else buf << t; } };
+    auto append = [&](const token& t) { if (t) { if (escape) buf.append_escaped(t, escape); else buf << t; } };
 
     MetaDesc* md = var->stream_desc();
 
