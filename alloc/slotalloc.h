@@ -42,6 +42,7 @@
 #include "../namespace.h"
 #include "../commexception.h"
 #include "../dynarray.h"
+#include "../range.h"
 #include "../bitrange.h"
 #include "../trait.h"
 
