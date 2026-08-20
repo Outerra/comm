@@ -481,7 +481,7 @@ public:
     }
 
     ///Delete object by pointer
-    void del_item_by_ptr(T* p)
+    void del_item_by_ptr(const T* p)
     {
         del_item_internal(p, get_item_id(p));
     }
@@ -1870,7 +1870,7 @@ protected:
         }
     }
 
-    void del_item_internal(T* p, uints id)
+    void del_item_internal(const T* p, uints id)
     {
         if (id >= created())
             throw exception("attempting to delete an invalid object ") << id;
