@@ -12,6 +12,8 @@ void std_test();
 void metastream_test();
 }
 
+void run_uid_tests();
+
 void metastream_test4();
 void metastream_test3();
 void metastream_test2();
@@ -331,6 +333,7 @@ int main( int argc, char* argv[] )
 {
     run_directory_tests();
     run_token_tests();
+    run_uid_tests();
     singleton_test();
     binstring_test();
     //compot();

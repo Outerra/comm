@@ -45,4 +45,9 @@ namespace coid
     /// @return 20 character long unique ID
     coid::charstr generate_unique_id();
 
+    /// @brief Checks whether the specified unique ID is a valid COID unique id.
+    /// @param unique_id The unique ID string to validate.
+    /// @return `true` if the ID is valid; `false` otherwise.
+    bool is_valid_unique_id(const coid::token& unique_id);
+
 }; // end of namespace coid
