@@ -66,6 +66,9 @@ public: // methods only
 
     int get_process_thread_priority() const;
 
+    void* process_handle() const { return _process_handle; }
+    void* thread_handle() const { return _process_thread_handle; }
+
 protected: // methods only
 #if defined(SYSTYPE_MSVC)
     process(
@@ -94,10 +97,10 @@ protected: // members only
     void* _std_in_write_handle = nullptr;
     void* _std_in_read_handle = nullptr;
 
-    void* _process_handle;
-    void* _process_therad_handle;
-    unsigned long _process_id;
-    unsigned long _process_thead_id;
+    void* _process_handle = nullptr;
+    void* _process_thread_handle = nullptr;
+    unsigned long _process_id = -1;
+    unsigned long _process_thead_id = -1;
 #endif
 
     coid::thread _std_out_thread;

@@ -24,10 +24,10 @@ coid::process::process(
     , _std_in_write_handle(std_in_write_handle)
     , _std_in_read_handle(std_in_read_handle)
     , _process_handle(process_handle)
-    , _process_therad_handle(process_therad_handle)
+    , _process_thread_handle(process_therad_handle)
     , _process_id(process_id)
     , _process_thead_id(process_thead_id)
-    
+
     , _std_out_buf_mutex(512, false)
     , _std_err_buf_mutex(512, false)
 
@@ -61,8 +61,8 @@ coid::process::process(
 //            }
 //
 //            proc_ptr->_std_out_peek_pos += bytes_read;
-//        }        
-//        
+//        }
+//
 //        if (proc_ptr->_std_out_peek_pos == pipe_buffer_size)
 //        {
 //            success = ReadFile(proc_ptr->_std_out_handle, buf, pipe_buffer_size, &bytes_read, NULL);
@@ -164,9 +164,9 @@ coid::process::~process()
         CloseHandle(_process_handle);
     }
 
-    if (_process_therad_handle != NULL)
+    if (_process_thread_handle != NULL)
     {
-        CloseHandle(_process_therad_handle);
+        CloseHandle(_process_thread_handle);
     }
 
     if (_std_out_thread.is_invalid())
@@ -288,9 +288,9 @@ uint coid::process::write_std_in(const coid::token& message_in)
     {
         return 0;
     }
-    
+
     uint result = 0;
-    
+
     const char* message_start = message_in.ptr();
     const char* message_end = message_in.ptre();
 
@@ -315,7 +315,7 @@ int coid::process::get_process_thread_priority() const
 {
     if (is_running())
     {
-        return GetThreadPriority(_process_therad_handle);
+        return GetThreadPriority(_process_thread_handle);
     }
 
     return THREAD_PRIORITY_ERROR_RETURN;
@@ -384,7 +384,7 @@ ref<coid::process> coid::process::create_process(const coid::charstr& process_ex
             proc_startup_info.dwFlags |= STARTF_USESHOWWINDOW;
             proc_startup_info.wShowWindow = SW_HIDE;
         }
-        else 
+        else
         {
             proc_startup_info.dwFlags |= STARTF_USESHOWWINDOW;
             proc_startup_info.wShowWindow = SW_SHOWNOACTIVATE;
@@ -399,15 +399,15 @@ ref<coid::process> coid::process::create_process(const coid::charstr& process_ex
         proc_security_atttibs.lpSecurityDescriptor = NULL;
 
         if (!CreateProcess(
-            process_executable_path.c_str(), 
-            command_line_buf, 
-            &proc_security_atttibs, 
-            NULL, 
-            proc_security_atttibs.bInheritHandle, 
+            process_executable_path.c_str(),
+            command_line_buf,
+            &proc_security_atttibs,
+            NULL,
+            proc_security_atttibs.bInheritHandle,
             show_window ? CREATE_NEW_CONSOLE : DETACHED_PROCESS,
-            NULL, 
-            NULL, 
-            &proc_startup_info, 
+            NULL,
+            NULL,
+            &proc_startup_info,
             &proc_info))
         {
 
@@ -433,7 +433,7 @@ ref<coid::process> coid::process::create_process(const coid::charstr& process_ex
     {
         CloseHandle(std_out_write_handle);
         CloseHandle(std_err_write_handle);
-    
+
         coid::charstr thread_name = process_executable_path;
         thread_name << ": std out";
         result->_std_out_thread.create(&coid::process::process_std_out_thread_func, result.get(), nullptr, thread_name);
