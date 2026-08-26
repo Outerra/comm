@@ -858,7 +858,7 @@ public:
         if (id < 0)
         {
             push(v);
-            return _count() - 1;
+            id = _count() - 1;
         }
 
         return coid::down_cast<count_t>(id);
@@ -875,7 +875,7 @@ public:
         if (id < 0)
         {
             push(std::forward<T>(v));
-            return _count() - 1;
+            id = _count() - 1;
         }
 
         return coid::down_cast<count_t>(id);
