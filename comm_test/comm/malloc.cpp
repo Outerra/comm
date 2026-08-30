@@ -70,9 +70,26 @@ dynarray<uint> test_return_stack()
     return buf;
 }
 
+void test_string()
+{
+    charstr buf1(STACK_STRING(128));
+    charstr buf2;
+    buf2.reserve(128);
+
+    uints rs1 = buf1.reserved();
+    uints rs2 = buf2.reserved();
+
+    buf1.appendn(127, '.');
+    uints rs1b = buf1.reserved();
+
+    buf1.appendn(10, '\n');
+    buf2 << "\n\n";
+}
+
 void test_malloc()
 {
     //test_miki();
+    test_string();
 
     /*while(1)
     {

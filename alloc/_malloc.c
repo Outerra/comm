@@ -3957,17 +3957,23 @@ static void* mmap_alloc_virtual(mstate m, size_t nb) {
 */
 
 static void* mmap_alloc_stack(mstate m, size_t nb, void* buffer) {
-  char* mm = (char*)buffer;
-  ptrdiff_t offset = m->modalign - TWO_SIZE_T_SIZES;
-  size_t psize = nb - TWO_SIZE_T_SIZES - offset;
-            mchunkptr p = (mchunkptr)(mm + offset);
-  //p->prev_foot not used, may point to invalid memory in case of modalign == SIZE_T_SIZE
-  p->head = psize;
-  p->head |= FLAG4_BIT | PINUSE_BIT;  //marks stack memory when used with flag4
+    //stack chunk needs only (size_t)head, that should end at modalign alignment
+    size_t offset = (MALLOC_ALIGNMENT + m->modalign - (((size_t)buffer + SIZE_T_SIZE) & CHUNK_ALIGN_MASK)) & CHUNK_ALIGN_MASK;
+    if (offset) {
+        buffer = (void*)((size_t)buffer + offset);
+        nb -= offset;
+    }
 
-            assert(is_aligned(chunk2mem(p), m->modalign));
-            return chunk2mem(p);
-        }
+    char* mm = (char*)buffer - SIZE_T_SIZE;
+    size_t psize = nb - SIZE_T_SIZE;
+    mchunkptr p = (mchunkptr)mm;
+    //p->prev_foot not used, may point to invalid memory in case of modalign == SIZE_T_SIZE
+    p->head = psize;
+    p->head |= FLAG4_BIT | PINUSE_BIT;  //marks stack memory when used with flag4
+
+    assert(is_aligned(chunk2mem(p), m->modalign));
+    return chunk2mem(p);
+}
 
 /* Realloc using mmap */
 static mchunkptr mmap_resize(mstate m, mchunkptr oldp, size_t nb, int flags) {
@@ -5927,9 +5933,9 @@ void* mspace_realloc(mspace msp, void* oldmem, size_t bytes) {
       /* stack memory */
       mem = mspace_malloc(msp, bytes);
       if (mem != 0) {
-        size_t oc = chunksize(oldp) - overhead_for(oldp);
+        size_t oc = chunksize(oldp);
         memcpy(mem, oldmem, (oc < bytes) ? oc : bytes);
-        mspace_free(oldmem);
+        //mspace_free(oldmem);
       }
       return mem;
     }
@@ -6195,7 +6201,7 @@ size_t mspace_stack_size(const void* mem) {
         mchunkptr p = mem2chunk(mem);
         if (flag4inuse(p) && pinuse(p)) {
             //stack memory
-            return chunksize(p);
+            return chunksize(p) - overhead_for(p);
         }
     }
   return 0;

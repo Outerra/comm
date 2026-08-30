@@ -101,8 +101,8 @@ struct stack_buffer
 
     static size_t required_size(uints count) {
         constexpr uints mask = sizeof(size_t) - 1;
-        uints n16 = (count * sizeof(T) + mask) & ~mask;
-        return 2 * sizeof(size_t) + n16;
+        uints n16 = (count * sizeof(T) + mask) & ~mask; //align data to size_t
+        return 3 * sizeof(size_t) + n16; // optional alignment to 2*size_t, memchunk head, dynarray count field
     }
 };
 
