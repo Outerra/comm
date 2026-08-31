@@ -128,6 +128,7 @@ bool charstr::write_to_file(const char* path, bool append) const
         uints ws = size < block ? size : block;
         uints rs = fwrite(ptr, 1, ws, fp);
         size -= rs;
+        ptr += rs;
 
         if (rs < ws) {
             success = false;
