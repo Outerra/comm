@@ -1723,12 +1723,20 @@ public:
         return *this;
     }
 
-    /// @brief Append the content of the file
+    /// @brief Append the content of a file
     /// @param path file path
     /// @return true if opened and read succesfully
     bool append_from_file(const token& path);
-    bool append_from_file(const char* path);
     bool append_from_file(const charstr& path) { return append_from_file(path.c_str()); }
+    bool append_from_file(const char* path);
+
+    /// @brief Write the content to a file
+    /// @param path file path
+    /// @param append append to file or else truncate
+    /// @return true if succesfully written
+    bool write_to_file(const token& path, bool append) const;
+    bool write_to_file(const charstr& path, bool append) const { return write_to_file(path.c_str(), append); }
+    bool write_to_file(const char* path, bool append) const;
 
     ///Append string from binstream (without resetting previous content)
     binstream& append_from_stream(binstream& bin);

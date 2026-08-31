@@ -144,6 +144,10 @@ const char* name(level t)
     return t >= level::none && t < level::last ? names()[int(t) + 1] : 0;
 }
 
+level current_level()
+{
+    return interface_register::getlog()->get_log_level();
+}
 
 ref<logmsg> openmsg(level type, const tokenhash& hash, const void* inst)
 {

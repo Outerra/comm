@@ -124,6 +124,9 @@ namespace log {
 
     const char* name(level t);
 
+    /// @return current log level
+    level current_level();
+
     //@return logmsg object if given log type and source is currently allowed to log
     coid::ref<logmsg> openmsg(level type, const tokenhash& hash = tokenhash(), const void* inst = 0);
 

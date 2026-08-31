@@ -74,7 +74,8 @@ opcd binstream::read_key(charstr& key, int kmember, const token& expected_key)
 ////////////////////////////////////////////////////////////////////////////////
 bool charstr::append_from_file(const token& path)
 {
-    zstring zpath = path;
+    charstr zpath(STACK_STRING(260));
+    zpath = path;
 
     return append_from_file(zpath.c_str());
 }
@@ -83,21 +84,60 @@ bool charstr::append_from_file(const token& path)
 bool charstr::append_from_file(const char* path)
 {
     FILE* fp = fopen(path, "rb");
-    if (fp) {
-        constexpr int bufsize = 4096;
-        size_t rs, total = 0, old = len();
+    if (!fp)
+        return false;
 
-        do {
-            char* dst = alloc_append_buf(bufsize);
-            rs = fread(dst, 1, bufsize, fp);
-            total += rs;
-        }
-        while (rs == bufsize);
+    constexpr int bufsize = 4096;
+    size_t rs, total = 0, old = len();
 
-        resize(old + total);
-        fclose(fp);
+    do {
+        char* dst = alloc_append_buf(bufsize);
+        rs = fread(dst, 1, bufsize, fp);
+        total += rs;
     }
-    return fp != 0;
+    while (rs == bufsize);
+
+    resize(old + total);
+    fclose(fp);
+
+    return true;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+bool charstr::write_to_file(const token& path, bool append) const
+{
+    charstr zpath(STACK_STRING(260));
+    zpath = path;
+
+    return write_to_file(zpath.c_str(), append);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool charstr::write_to_file(const char* path, bool append) const
+{
+    FILE* fp = fopen(path, append ? "ab" : "wb");
+    if (!fp)
+        return false;
+
+    const char* ptr = c_str();
+    const uints block = 4096;
+    uints size = len();
+    bool success = true;
+    while (size > 0)
+    {
+        uints ws = size < block ? size : block;
+        uints rs = fwrite(ptr, 1, ws, fp);
+        size -= rs;
+
+        if (rs < ws) {
+            success = false;
+            break;
+        }
+    }
+
+    fclose(fp);
+    return success;
+}
+
 
 } //namespace coid

@@ -1912,14 +1912,14 @@ public:
     uints byte_size() const { return _count() * sizeof(T); }
 
     ///Return number of remaining reserved bytes
-    uints reserved_remaining() const { return _size() - sizeof(T) * _count(); }
-    uints reserved_total() const { return _size(); }
+    [[nodiscard]] uints reserved_remaining() const { return _size() - sizeof(T) * _count(); }
+    [[nodiscard]] uints reserved_total() const { return _size(); }
 
     /// @return reserved virtual size in bytes, if the memory was allocaded by reserve_virtual, otherwise 0
-    uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
+    [[nodiscard]] uints reserved_virtual() const { return A::reserved_virtual_size(_ptr); }
 
     /// @return reserved stack size in bytes, if the memory was allocaded by reserve_stack, otherwise 0
-    uints reserved_stack() const { return A::reserved_stack_size(_ptr); }
+    [[nodiscard]] uints reserved_stack() const { return A::reserved_stack_size(_ptr); }
 
 
     typedef T*                          iterator;

@@ -153,6 +153,7 @@ public:
 
     virtual void enqueue(ref<logmsg>&& msg);
 
+    log::level get_log_level() const { return _minlevel; }
     void set_log_level(log::level minlevel = log::level::last, bool allow_perf = false);
 
     static void enable_debug_out(bool en);
