@@ -199,7 +199,7 @@ struct comm_array_allocator
 
         //to be compatible with dlmalloc, we need to set flag4 and pinuse for this memory
         uints* p = (uints*)mspace_malloc_stack(SINGLETON(comm_array_mspace).msp, buffer_size, buffer);
-        p[0] = buffer_size - sizeof(size_t);
+        p[0] = n;
         return p + 1;
     }
 

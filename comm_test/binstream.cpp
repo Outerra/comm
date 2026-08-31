@@ -23,7 +23,7 @@
 //#include <comm/metastream/fmtstream_lua_capi.h>
 //#include <comm/metastream/fmtstream_v8.h>
 
-#define HAS_ZLIB
+//#define HAS_ZLIB
 
 #ifdef HAS_ZLIB
 #include <comm/binstream/packstreambzip2.h>

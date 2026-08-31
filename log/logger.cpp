@@ -575,4 +575,38 @@ void log_writer::flush()
         m->write();
         m.release();
     }
+
+    //log_stderr();
+}
+
+bool log_writer::log_stderr()
+{
+    //read from stdou/stderr
+    static int stdout_pipe[2] = {};
+    static int stderr_pipe[2] = {};
+
+    //if (stdout_pipe[0] == 0) {
+    //    _pipe(stdout_pipe, 4096, O_TEXT);
+    //    _dup2(stdout_pipe[1], _fileno(stdout));  // replace stdout
+    //    setvbuf(stdout, NULL, _IOLBF, 0);        // line-buffered
+    //}
+
+    if (stderr_pipe[0] == 0) {
+        _pipe(stderr_pipe, 4096, O_TEXT);
+        _dup2(stderr_pipe[1], _fileno(stderr));  // replace stderr
+        setvbuf(stderr, NULL, _IOLBF, 1024);     // line-buffered
+    }
+
+    char buffer[512];
+    int n = _read(stderr_pipe[0], buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+        buffer[n] = '\0';
+        fwrite(buffer, 1, n, stdout);
+
+        if (_enable_debug_out) {
+            stdoutstream::debug_out(buffer);
+        }
+    }
+
+    return n > 0;
 }
