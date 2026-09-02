@@ -243,9 +243,9 @@ bool directory::is_subpath(token root, token path)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::append_path(charstr& dst, token path, bool keep_below)
+bool directory::append_path(charstr& dst, token path, bool keep_below, char compact_separator)
 {
-    return build_path_internal(dst, path, dst, keep_below, keep_below);
+    return build_path_internal(dst, path, dst, compact_separator != 0, keep_below, compact_separator);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

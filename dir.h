@@ -134,7 +134,7 @@ public:
     static bool is_valid_name(const coid::token& name);
 
     /// @brief Validates filename
-    /// @param filename(in/out) - name to validate 
+    /// @param filename(in/out) - name to validate
     /// @param replacement_char - replacement character for the invalid characters found in the filename
     /// @return validated name
     static charstr& validate_filename(charstr& filename, char replacement_char = '_') {
@@ -172,7 +172,7 @@ public:
         valid_relative_file_path,
         valid_absolute_file_path,
     };
-    
+
     /// @brief Checks whether the given path is syntactically valid (i.e., uses only allowed characters, format, etc.).
     /// @param path The path to validate.
     /// @return One of the following:
@@ -199,7 +199,7 @@ public:
 
     /// @brief Checks whether the given path exists on the physical device and determines its type.
     /// @param path The path to the file or directory to validate.
-    /// @return 
+    /// @return
     ///         - `0` if the path does not exist on the device (invalid),
     ///         - `1` if the path exists and points to a file,
     ///         - `2` if the path exists and points to a directory.
@@ -311,12 +311,12 @@ public:
         whole_directory //< copies the entire directory, including the source folder itself
     };
 
-    
+
     /// @brief Copies source dirctory to destination directory
     /// @param source - source directory path
     /// @param destination - destination directory path
-    /// @param mode - see directory_copy_mode_enum 
-    /// @return error code 
+    /// @param mode - see directory_copy_mode_enum
+    /// @return error code
     /// @note Will fail if source directory already exists in destination directory
     static opcd copy_directory(zstring source, zstring destination, copy_directory_mode_enum mode)
     {
@@ -324,12 +324,12 @@ public:
         {
             return ersINVALID_PARAMS;
         }
-        
+
 
         coid::charstr& src_str = source.get_str();
         coid::charstr& dst_str = destination.get_str();
         treat_trailing_separator(dst_str, '/');
-        
+
 
         if (mode == copy_directory_mode_enum::whole_directory)
         {
@@ -340,7 +340,7 @@ public:
         {
             treat_trailing_separator(src_str, '/');
         }
-        else 
+        else
         {
             DASSERT_RETX(0, "Not implemented. New copy_directory_mode_enum value added?", ersFAILED_ASSERTION);
         }
@@ -486,7 +486,21 @@ public:
     ///     already end with one. @p path keeps the separators it is written with.
     /// @note @p keep_below compacts the result, the test against @p dst needing it resolved anyway.
     ///     Without it nothing is resolved, @p dst receives @p path as it was given.
-    static bool append_path(charstr& dst, token path, bool keep_below = false);
+    static bool append_path(charstr& dst, token path, bool keep_below = false, char compact_separator = 0);
+
+    /// @brief Concatenate a directory path with a relative or absolute file/dir path
+    /// @param dir_path directory path to append to
+    /// @param rel_or_abs_path relative or absolute path to append, an absolute one replaces the dir_path completely
+    /// @param keep_below If true, the operation is carried out only when the resulting
+    ///        path stays below the initial directory scope of @p dir_path.
+    /// @return concatenated path
+    static charstr concatenate_path(const token& dir_path, const token& rel_or_abs_path, bool keep_below = false, char compact_separator = 0)
+    {
+        charstr dst = dir_path;
+        if (!append_path(dst, rel_or_abs_path, keep_below, compact_separator))
+            dst.reset();
+        return dst;
+    }
 
     /// @brief Builds a path from a base path and a path component appended to it.
     /// @param[in] base The base path the component is appended to.
@@ -542,12 +556,12 @@ public:
     static bool compact_path(charstr& dst, char use_separator = 0);
 
     /// @brief Normalizes a path by resolving relative components and fixing separators.
-    /// @details Removes redundant path separators (e.g., `//` -> `/`) and resolves 
+    /// @details Removes redundant path separators (e.g., `//` -> `/`) and resolves
     /// nested relative segments (e.g., `dir/../`).
     /// @param path The input path string to compact.
-    /// @param to_sep The target separator character to normalize to (typically '/' or '\\'). 
+    /// @param to_sep The target separator character to normalize to (typically '/' or '\\').
     /// Pass `0` to keep the original separators.
-    /// @return The compacted path string, or an empty string if the path is invalid or 
+    /// @return The compacted path string, or an empty string if the path is invalid or
     /// escapes the root directory (e.g., `../../` from a root drive).
     static coid::charstr create_compact_path(const coid::token& path, char to_sep = 0);
 
@@ -726,7 +740,7 @@ protected:
     static bool is_valid_name_char(char c)
     {
         static char forbidden_chars[] = { '\\','/',':', '*', '?','\"','<', '>', '|' };
-        
+
         return c != forbidden_chars[0] &&
             c != forbidden_chars[1] &&
             c != forbidden_chars[2] &&
@@ -762,7 +776,7 @@ protected:
     ///                               zero when it is relative. The call that consumes the root sets
     ///                               it back to zero, so the same variable can be handed to every
     ///                               call of a walk. When 0 is passed for a path that does carry a
-    ///                               root, the root would be cut into ordinary components. 
+    ///                               root, the root would be cut into ordinary components.
     /// @param[in]      component     Specifies whether to extract the `first` or the `last` component.
     /// @param[out]     result        The extracted component, the empty token when it the UNIX root.
     /// @param[out]     remainder     Token that left of @p path once the
