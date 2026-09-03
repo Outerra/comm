@@ -266,7 +266,7 @@ public:
                 src.reset();
             }
             else {
-                //something that's not cpoy assignable cannot be allocated on stack
+                //something that's not copy assignable cannot be allocated on stack
                 DASSERT(0);
             }
         }

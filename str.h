@@ -224,6 +224,7 @@ public:
         }
     */
 
+    explicit charstr(bool) = delete;
     explicit charstr(char c) { append(c); }
 
     template<class Enum>
@@ -437,6 +438,7 @@ public:
 
     //charstr& operator = (const char* czstr) { return set(token::from_cstring(czstr)); }
 
+    charstr& operator = (bool) = delete;
     charstr& operator = (char c) { reset(); append(c); return *this; }
 
     template<class Enum>
@@ -556,6 +558,7 @@ public:
         return *this;
     }
 
+    charstr& operator += (bool) = delete;
     charstr& operator += (char c) { append(c); return *this; }
 
     template<class Enum>
@@ -604,6 +607,8 @@ public:
 
     charstr& operator << (const token& tok) { return operator += (tok); }
     charstr& operator << (const charstr& tok) { return operator += (tok); }
+
+    charstr& operator << (bool) = delete;
     charstr& operator << (char c) { return operator += (c); }
 
     template<class Enum>
@@ -2349,6 +2354,22 @@ public:
         res += tok;
         return res;
     }
+
+    [[nodiscard]] charstr operator + (const charstr& str) const
+    {
+        charstr res = *this;
+        res += str;
+        return res;
+    }
+
+    [[nodiscard]] charstr operator + (const char* zstr) const
+    {
+        charstr res = *this;
+        res += zstr;
+        return res;
+    }
+
+    charstr operator + (bool) const = delete;
 
     [[nodiscard]] charstr operator + (char c) const
     {
