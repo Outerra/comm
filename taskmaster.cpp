@@ -2,6 +2,8 @@
 #include "profiler/profiler.h"
 #include "taskmaster.h"
 
+COIDLOG_MODULE(taskmaster);
+
 COID_NAMESPACE_BEGIN
 
 
@@ -73,7 +75,7 @@ void* taskmaster::threadfunc( int order )
     get_order() = order;
 
     thread::set_affinity_mask((uint64)1 << order);
-    coidlog_info("taskmaster", "thread " << order << " running");
+    coidlog_info("thread " << order << " running");
     char tmp[64];
     sprintf_s(tmp, "taskmaster %d", order);
     profiler::set_thread_name(tmp);
@@ -97,7 +99,7 @@ void* taskmaster::threadfunc( int order )
         wait_internal();
     }
 
-    coidlog_info("taskmaster", "thread " << order << " exiting");
+    coidlog_info("thread " << order << " exiting");
 
     return 0;
 }

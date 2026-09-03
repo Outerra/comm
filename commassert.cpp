@@ -76,7 +76,7 @@ bool __rassert(const opt_string& txt, const char* file, int line, const char* fu
     zstring* z = txt.get();
     coid::token fname = coid::token(file).cut_right_group_back("\\/");
 
-    coidlog_error("", "Assertion failed in " << fname << '(' << line
+    coidlog_loglevelsrc(coid::log::level::error, nullptr, "Assertion failed in " << fname << '(' << line
         << "), function " << function << ":\n\""
         << (expr ? expr : "") << (z && expr ? "\": " : "\"") << (z ? z->get_token() : token())
         << char(flush ? '\r' : '\0') // \r forces log flush

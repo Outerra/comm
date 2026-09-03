@@ -229,11 +229,11 @@ inline void debug_print_stack(lua_State* L, int from_index = 0)
             debug_stack_value_to_str(L, i, true, res, 0);
         }
 
-        coidlog_debug("debug_print_stack", res);
+        coidlog_debug_src("debug_print_stack", res);
     }
     else
     {
-        coidlog_debug("debug_print_stack", "The stack is empty!");
+        coidlog_debug_src("debug_print_stack", "The stack is empty!");
     }
 
     DASSERT(n == lua_gettop(L));
@@ -425,7 +425,7 @@ inline int ctx_log(lua_State* L) {
 
 
         coid::token msg = lua_totoken(L, -1);
-        coidlog_none(hash, msg);
+        coidlog_none_src(hash, msg);
     }
     catch (const coid::exception& e)
     {
@@ -902,7 +902,7 @@ inline void print_registry(lua_State* L)
     result << "}";
     lua_pop(L, 1);
 
-    coidlog_debug("print_registry", result);
+    coidlog_debug_src("print_registry", result);
 }
 
 

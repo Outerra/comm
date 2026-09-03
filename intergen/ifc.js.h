@@ -437,7 +437,7 @@ public:
             args.GetReturnValue().Set(get(args));
         }
         catch (const std::exception& e) {
-            coidlog_error("js", e.what());
+            coidlog_error_src("js", e.what());
         }
     }
 

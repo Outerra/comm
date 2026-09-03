@@ -40,6 +40,8 @@
 #include "../hash/hashkeyset.h"
 #include "../log/logger.h"
 
+COIDLOG_MODULE(metastream);
+
 COID_NAMESPACE_BEGIN
 
 
@@ -48,7 +50,7 @@ void metastream::warn_obsolete(const token& name)
 {
     (_err = "warning: obsolete variable '") << name << '\'';
     _fmtstreamrd->fmtstream_err(_err, false);
-    coidlog_warning("metastream", _err);
+    coidlog_warning(_err);
 }
 
 void metastream::error_enum_name(const token& name)
@@ -56,7 +58,7 @@ void metastream::error_enum_name(const token& name)
     _err.reset();
     dump_stack(_err, 0);
     _err << " - error: enum '" << name << "' name notfound";
-    coidlog_error("metastream", _err);
+    coidlog_error(_err);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
