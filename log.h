@@ -43,7 +43,7 @@
 
 #define COIDLOG_SRC use_COIDLOG_MODULE_macro_to_specify_short_module_name_for_log
 
-#define QUOTED_STR(str) "'" << str << "'"
+#define QUOTED_STR(str) '\'' << str << '\''
 
  ////////////////////////////////////////////////////////////////////////////////
  //@{ Log message with specified severity
