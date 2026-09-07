@@ -43,6 +43,8 @@
 
 #define COIDLOG_SRC use_COIDLOG_MODULE_macro_to_specify_short_module_name_for_log
 
+#define QUOTED_STR(str) "'" << str << "'"
+
  ////////////////////////////////////////////////////////////////////////////////
  //@{ Log message with specified severity
 #define coidlog_exception(msg)  do{ coid::ref<coid::logmsg> q = coid::log::openmsg(coid::log::level::exception, COIDLOG_SRC); if (q) {q->str() << msg; }} while(0)
