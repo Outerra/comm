@@ -325,10 +325,10 @@ public:
             case type::T_ERRCODE:
             {
                 opcd e = (const opcd::errcode*)p;
-                token t;
-                t.set(e.error_code(), token::strnlen(e.error_code(), 5));
+                token tt;
+                tt.set(e.error_code(), token::strnlen(e.error_code(), 5));
 
-                _bufw << "\"[" << t;
+                _bufw << "\"[" << tt;
                 if (e == NOERR)  _bufw << "]\"";
                 else {
                     _bufw << "] " << e.error_desc();
@@ -715,12 +715,12 @@ public:
 
                 _bufw << "\\\"";
 
-                token t((const char*)c.extract(n), n);
-                if (!_tokenizer.synthesize_string(lexstre, t, _bufw, true)) {
+                token tt((const char*)c.extract(n), n);
+                if (!_tokenizer.synthesize_string(lexstre, tt, _bufw, true)) {
                     //there was no need to escape anything, revert to simple strings
                     _bufw.reset();
                     _bufw << char('"');
-                    _bufw += t;
+                    _bufw += tt;
                 }
 
                 uints len = _bufw.len();

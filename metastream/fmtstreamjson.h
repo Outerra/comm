@@ -334,10 +334,10 @@ public:
             case type::T_ERRCODE:
             {
                 opcd e = (const opcd::errcode*)p;
-                token t;
-                t.set(e.error_code(), token::strnlen(e.error_code(), 5));
+                token tt;
+                tt.set(e.error_code(), token::strnlen(e.error_code(), 5));
 
-                _bufw << "\"[" << t;
+                _bufw << "\"[" << tt;
                 if (e == NOERR)  _bufw << "]\"";
                 else {
                     _bufw << "] " << e.error_desc();
