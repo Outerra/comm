@@ -380,8 +380,14 @@ public:
         args.GetReturnValue().Set(rval);
     }
 
+    static void console_debug(const v8::ARGUMENTS& args) { return log_ext(args, coid::log::level::debug); }
+    static void console_info(const v8::ARGUMENTS& args) { return log_ext(args, coid::log::level::info); }
+    static void console_log(const v8::ARGUMENTS& args) { return log_ext(args, coid::log::level::none); }
+    static void console_warn(const v8::ARGUMENTS& args) { return log_ext(args, coid::log::level::warning); }
+    static void console_error(const v8::ARGUMENTS& args) { return log_ext(args, coid::log::level::error); }
+
     ///Log msg from JS
-    static void log(const v8::ARGUMENTS& args)
+    static void log_ext(const v8::ARGUMENTS& args, coid::log::level level = coid::log::level::none)
     {
         v8::Isolate* iso = args.GetIsolate();
 
@@ -405,7 +411,7 @@ public:
         coid::token tokey(*key, key.length());
 
         intergen_interface::ifclog_ext(
-            coid::log::level::none,
+            level,
             coid::log::target::primary_log,
             inst ? coid::token(inst->intergen_interface_name()) : "js"_T,
             inst, tokey);
@@ -446,7 +452,7 @@ public:
 
         gobj->Set(ctx, v8::symbol("$include", iso), v8::FunctionTemplate::New(iso, &include)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
         gobj->Set(ctx, v8::symbol("$query_interface", iso), v8::FunctionTemplate::New(iso, &query_interface)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
-        gobj->Set(ctx, v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &log)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
+        gobj->Set(ctx, v8::symbol("$log", iso), v8::FunctionTemplate::New(iso, &console_log)->GetFunction(ctx).ToLocalChecked()) V8_CHECK;
     }
 
 private:
