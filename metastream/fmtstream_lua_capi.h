@@ -462,9 +462,9 @@ public:
 
                 if (lua_isnumber(_state, -1)) {
                     v = lua_tointeger(_state, -1);
-                    opcd e;
-                    e.set(uint(v));
-                    *(opcd*)p = e;
+                    opcd ec;
+                    ec.set(uint(v));
+                    *(opcd*)p = ec;
                 }
                 else {
                     e = ersSYNTAX_ERROR "expected number";

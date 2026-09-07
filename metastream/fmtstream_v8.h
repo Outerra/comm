@@ -943,9 +943,9 @@ public:
 
                 /////////////////////////////////////////////////////////////////////////////////////
             case type::T_TIME: {
-                int64 t;
-                if (from_v8<int64>().write(_top->value, t))
-                    *(timet*)p = t;
+                int64 tt;
+                if (from_v8<int64>().write(_top->value, tt))
+                    *(timet*)p = tt;
                 else
                     e = ersSYNTAX_ERROR "expected time value";
             } break;
@@ -967,10 +967,10 @@ public:
             case type::T_ERRCODE: {
                 int64 v;
                 if (from_v8<int64>().write(_top->value, v)) {
-                    opcd e;
-                    e.set(uint(v));
+                    opcd ee;
+                    ee.set(uint(v));
 
-                    *(opcd*)p = e;
+                    *(opcd*)p = ee;
                 }
                 else
                     e = ersSYNTAX_ERROR "expected number";

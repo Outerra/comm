@@ -194,10 +194,10 @@ private: // internal definitions only
             const uint _flags = n->_flags;
 
             if (!pool.ptr(id)->is_leaf()) {
-                handle n = insert(_child.x, size, pool);
-                if (!n.is_valid())
-                    n = insert(_child.y, size, pool);
-                return n;
+                handle hn = insert(_child.x, size, pool);
+                if (!hn.is_valid())
+                    hn = insert(_child.y, size, pool);
+                return hn;
             }
             else {
                 if (_flags != 0 || size.x > _size.x || size.y > _size.y)

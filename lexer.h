@@ -1228,7 +1228,7 @@ public:
                 _last.intok.set(_tok.ptr(), _tok.ptr());
 
                 //this is a leading string or block delimiter
-                uints off = 0;
+                uints offx = 0;
                 bool ign = ignored(*seq) && seq->id != enb;
 
                 if (seq->type == entity::BLOCK)
@@ -1242,10 +1242,10 @@ public:
                         return _last;
                     }
 
-                    next_read_block(*(const block_rule*)seq, off, true, ign);
+                    next_read_block(*(const block_rule*)seq, offx, true, ign);
                 }
                 else if (seq->type == entity::STRING) {
-                    next_read_string(*(const string_rule*)seq, off, true, ign);
+                    next_read_string(*(const string_rule*)seq, offx, true, ign);
                 }
                 else {
                     _last.outok._pte = _tok.ptr();
