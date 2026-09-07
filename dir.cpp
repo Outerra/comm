@@ -304,7 +304,7 @@ opcd directory::rename_directory(zstring path, zstring new_name)
     {
         path_tok.shift_end(-1);
     }
-    
+
     path_tok.cut_right_group_back(DIR_SEPARATORS, coid::token::cut_trait_keep_sep_with_source_default_empty());
 
     new_name.get_str().ins(0, path_tok);
@@ -481,7 +481,7 @@ opcd directory::copymove_directory(zstring src, zstring dst, bool move)
             token folder = src.get_token().cut_right_group_back("\\/"_T);
             dsts << folder;
         }
-        
+
         if (!is_valid_directory(dsts))
         {
             mkdir(dsts);
@@ -570,8 +570,9 @@ opcd directory::mkdir_tree(token name, bool last_is_file, uint mode)
         dirend = true;
     }
 
-    zstring path = name;
-    char* pc = (char*)path.c_str();
+    charstr path(STACK_STRING(name.len() + 1));
+    path = name;
+    char* pc = const_cast<char*>(path.ptr());
 
     for (uint i = 0; i < name.len(); ++i)
     {
@@ -776,7 +777,7 @@ coid::token directory::extract_path_component(const coid::token& path, uint32& r
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool directory::extract_path_component_internal( 
+bool directory::extract_path_component_internal(
     const coid::token& path,
     uint32& root_length_in_out,
     path_component_enum component,
@@ -976,7 +977,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
             return false;
         }
     }
-    else 
+    else
     {
         tmp_result = base_path;
     }
@@ -990,7 +991,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
             {
                 tmp_result = appended_path;
             }
-            else 
+            else
             {
                 charstr compact_appended_path(STACK_STRING(appended_path.len() + 1));
                 if (!do_compact(appended_path, compact_appended_path, normalize_separators_only, use_separator))
@@ -1008,7 +1009,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
                 }
             }
         }
-        else 
+        else
         {
             charstr compact_base_path;
             if (keep_below)
@@ -1024,7 +1025,7 @@ bool directory::build_path_internal(const token& base_path, const token& appende
                     return false;
                 }
             }
-            else 
+            else
             {
                 if (tmp_result.is_set() && !tmp_result.get_token().ends_with_any_of(DIR_SEPARATORS))
                 {
@@ -1046,12 +1047,12 @@ uint32 directory::get_path_root_length_internal(const coid::token& path)
     const uint path_len = path.len();
 #ifdef SYSTYPE_WIN
     const bool is_dos_drive = path_len >= 2 && path[1] == ':';
-    
+
     if (is_dos_drive)
     {
         return path.shifted_start(2).count_ingroup(separators()) + 2;
     }
-    else 
+    else
     {
         const uint unc_root_len = get_unc_root_len(path);
         return unc_root_len > 0 ? (unc_root_len + path.shifted_start(unc_root_len).count_ingroup(separators())) : 0;
