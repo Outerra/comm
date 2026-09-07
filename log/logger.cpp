@@ -49,6 +49,8 @@
 #include "../timer.h"
 #include "../net_ul.h"
 
+COIDLOG_MODULE(logger);
+
 using namespace coid;
 
 static bool _enable_debug_out = false;
@@ -499,6 +501,8 @@ void logger::post(const token& txt, const token& from, const void* inst)
 ////////////////////////////////////////////////////////////////////////////////
 void logger::open(const token& filename)
 {
+    coidlog_debug("opening logger file: " << filename);
+
     if (!_logfile)
         _logfile = ref<logger_file>(new logger_file(_stdout));
 
