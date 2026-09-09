@@ -52,6 +52,11 @@ COID_NAMESPACE_BEGIN
 
 class binstream;
 
+///Macro to allocate stack memory buffer
+///Needs to be a macro to keep _alloca call in correct scope
+#define STACK_BINSTRING(count) coid::stack_buffer<uint8>(count, _alloca(coid::stack_buffer<uint8>::required_size(count)))
+
+
 ////////////////////////////////////////////////////////////////////////////////
 ///Binary string class. Written values are aligned by their size and specified packing value.
 ///Read values are returned via fetch() as references into the stream.
@@ -63,8 +68,18 @@ public:
 
     binstring() = default;
 
+    /// @brief Pre-allocate memory for this binstring
+    /// @param reserve_size size to reserve
+    /// @param mode reserve mode to use
     explicit binstring(uints reserve_size, reserve_mode mode = reserve_mode::memory)
         : _tstr(reserve_size, mode)
+    {}
+
+    /// @brief Reserve stack memory for this binstring
+    /// @param sb stack buffer created with the STACK_BINSTRING macro
+    /// @note will switch to the heap memory automatically when real buffer grows over the reserved size
+    binstring(const stack_buffer<uint8>& sb)
+        : _tstr(sb)
     {}
 
     binstring(binstring&& other) noexcept

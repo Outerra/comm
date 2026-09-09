@@ -178,6 +178,7 @@ public:
 
     /// @brief Reserve stack memory for this dynarray
     /// @param sb stack buffer created with the STACK_RESERVE macro
+    /// @note will switch to the heap memory automatically when real buffer grows over the reserved size
     dynarray(const stack_buffer<T>& sb) {
         _ptr = A::template reserve_stack<T>(sb.count, sb.buffer, sb.buffer_size());
         _set_count(0);
