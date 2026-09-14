@@ -3,7 +3,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator)
+bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname)
 {
     file = lex.get_current_file();
     line = lex.current_line();
@@ -66,7 +66,8 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
         storage = ret.type;
     }
 
-    lex.match(lex.IDENT, name, "expected method name");
+    if (!nomethodname)
+        lex.match(lex.IDENT, name, "expected method name");
 
     boperator = name == "operator";
     if (boperator) {
@@ -88,16 +89,65 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
             Arg* arg = args.last();
 
-            if (arg->binarg) {
+            if (arg->name.is_empty())
+            {
+                //generate arg name if missing
+                (arg->name = "arg_") << num_right0<2>(args.size());
+            }
+
+            if (arg->binarg)
+            {
                 ++ninargs;
                 if (!arg->defval)
                     ++ninargs_nondef;
-            }
-            if (arg->boutarg)
-                ++noutargs;
 
-            arg->tokenpar = arg->binarg &&
-                (arg->basetype == "token" || arg->basetype == "coid::token" || arg->basetype == "charstr" || arg->basetype == "coid::charstr");
+                arg->tokenarg = (arg->basetype == "token" || arg->basetype == "coid::token" || arg->basetype == "charstr" || arg->basetype == "coid::charstr");
+
+                bool callbackarg = arg->basetype.begins_with("coid::callback<"_T);
+                if (callbackarg)
+                {
+                    token calltype = arg->basetype;
+                    calltype.consume("coid::callback<"_T);
+                    calltype.consume_end_char('>');
+                    if (arg->callback_sig && arg->callback_sig != calltype) {
+                        out << (lex.prepare_exception()
+                            << "error: mismatched callback signature '" << arg->callback_sig << "' vs. '" << calltype << "'\n");
+                        lex.clear_err();
+                        ++ncontinuable_errors;
+                    }
+                    arg->callback_sig = calltype;
+
+                    iglexer lextmp;
+                    lextmp.bind(arg->callback_sig);
+
+                    arg->callback = new MethodIG;
+                    bool cstate;
+                    try {
+                        cstate = arg->callback->parse(lextmp, host, charstr(), charstr(), fwds, true, false, true);
+                        arg->callback->name << name << "__" << arg->name;
+                    }
+                    catch (const std::exception&) {
+                        cstate = false;
+                    }
+
+                    if (!cstate)
+                    {
+                        out << (lex.prepare_exception()
+                            << "error: failed to parse callback signature '" << arg->callback_sig << "'\n");
+                        lex.clear_err();
+                        ++ncontinuable_errors;
+                    }
+                    else
+                    {
+                        arg->callbackarg = true;
+                    }
+                }
+            }
+
+            if (arg->boutarg)
+            {
+                ++noutargs;
+            }
         }
         while (lex.matches(','));
 

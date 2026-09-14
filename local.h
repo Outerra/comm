@@ -148,18 +148,25 @@ template<class T> binstream& operator >> (binstream&, local<T>& );
 template <class T>
 class local
 {
-    T* _p;
+    T* _p = 0;
 public:
-    local() { _p = 0; }
+
+    using element_type = T;
+
+    local() = default;
     ~local() { if (_p) { delete _p;  _p = 0; } }
 
-    local(T* p) { _p = p; }
+    local(T* p) : _p(p) {}
 
-    local(const local& p) = delete;
+    local(const local& p)
+    {
+        if (p.is_set())
+            _p = new T(*p);
+    }
 
     local(local&& p)
     {
-        _p = p._p;//new T(*p._p);
+        _p = p._p;
         p._p = 0;
     }
 
@@ -185,6 +192,17 @@ public:
     local& operator = (const T* p) {
         if (_p) delete _p;
         _p = (T*)p;
+        return *this;
+    }
+
+    local& operator = (const local& p)
+    {
+        if (_p) {
+            delete _p;
+            _p = 0;
+        }
+        if (p._p)
+            _p = new T(*p._p);
         return *this;
     }
 

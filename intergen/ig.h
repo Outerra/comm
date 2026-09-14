@@ -216,6 +216,10 @@ struct MethodIG
         charstr defval;
         charstr ifckwds;                //< ifc_out, ifc_inout and ifc_volatile string
         charstr doc;
+
+        charstr callback_sig;           //< callback signature, e.g. "void(int, charstr)"
+        local<MethodIG> callback;       //< function description if the argument is a callback
+
         bool bspecptr = false;          //< special type where pointer is not separated (e.g const char*)
         bool bptr = false;              //< true if the type is a pointer
         bool bref = false;              //< true if the type is a reference
@@ -230,7 +234,8 @@ struct MethodIG
         bool binarg = true;             //< input type argument
         bool boutarg = false;           //< output type argument
         bool bvolatile = false;
-        bool tokenpar = false;          //< input argument that accepts token (token or charstr)
+        bool tokenarg = false;          //< input argument that accepts token (token or charstr)
+        bool callbackarg = false;       //< callback type argument
         bool bnoscript = false;         //< not used in scripts, use default val
         bool bfnarg = false;            //< function type arg
 
@@ -271,9 +276,11 @@ struct MethodIG
                 m.member("inarg", p.binarg);
                 m.member("outarg", p.boutarg);
                 m.member("volatile", p.bvolatile);
-                m.member("token", p.tokenpar);
+                m.member("token", p.tokenarg);
                 m.member("nojs", p.bnoscript);
                 m.member("fnarg", p.bfnarg);
+                m.member("callback", p.callbackarg);
+                m.member_optional_smartptr("callbackfn", p.callback);
             });
         }
     };
@@ -330,7 +337,7 @@ struct MethodIG
     //    ret.fix_copy(src.ret);
     //}
 
-    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator);
+    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname);
 
     void parse_docs();
 
@@ -424,6 +431,7 @@ struct Interface
 
     dynarray<MethodIG> method;
     dynarray<MethodIG> event;
+    dynarray<MethodIG> callback;
 
     MethodIG destroy;
     charstr default_creator;
@@ -538,6 +546,7 @@ struct Interface
             //m.member("nifcmethods", p.nifc_methods);
             m.member("varname", p.varname);
             m.member("event", p.event);
+            m.member("callback", p.callback);
             m.member("destroy", p.destroy);
             m.member("hash", p.hash);
             //m.member("inhmask", p.inhmask);

@@ -2,10 +2,12 @@
 #include <comm/taskmaster.h>
 #include <comm/log/logger.h>
 
+COIDLOG_MODULE(jobtest);
+
 struct jobtest
 {
     void func(int a, void* b) {
-        coidlog_info("jobtest", "a: " << a << ", b: " << (uints)b);
+        coidlog_info("a: " << a << ", b: " << (uints)b);
     }
 };
 
@@ -66,7 +68,7 @@ void test_job_queue()
     jobtest jt;
 
     auto job1 = [](int a, void* b) {
-        coidlog_info("jobtest", "a: " << a << ", b: " << (uints)b);
+        coidlog_info("a: " << a << ", b: " << (uints)b);
     };
 
     task.push(coid::taskmaster::EPriority::LOW, nullptr, job1, 1, nullptr);

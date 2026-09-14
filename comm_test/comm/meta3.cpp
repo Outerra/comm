@@ -310,22 +310,23 @@ struct as_type
             return blah == s.blah && fooi == s.fooi;
         }
 
-        friend metastream& operator || (metastream& m, something& p) {
+        friend metastream& operator || (metastream& m, something& p)
+        {
             return m.compound_type_stream_as_type<coid::charstr>(p,
                 [&]() {
-                m.member("blah", p.blah);
-                m.member("fooi", p.fooi);
-            },
+                    m.member("blah", p.blah);
+                    m.member("fooi", p.fooi);
+                },
                 [](something& p, coid::charstr&& v) {
-                token t = v;
-                token n = t.cut_right_back(':');
-                p.blah.takeover(v);
-                p.blah.resize(t.len());
-                p.fooi = n.toint();
-            },
+                    token t = v;
+                    token n = t.cut_right_back(':');
+                    p.blah.takeover(v);
+                    p.blah.resize(t.len());
+                    p.fooi = n.toint();
+                },
                 [](something& p) -> coid::charstr {
-                return p.blah + ':' + p.fooi;
-            });
+                    return p.blah + ':' + p.fooi;
+                });
         }
     };
 

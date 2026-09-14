@@ -40,10 +40,10 @@ int Interface::check_interface(iglexer& lex, const dynarray<paste_block>& classp
     }
 
     getter = get.ret;
-    getter.tokenpar = get.args[0].tokenpar;
+    getter.tokenarg = get.args[0].tokenarg;
 
     setter = set.args[1];
-    setter.tokenpar = set.args[0].tokenpar;
+    setter.tokenarg = set.args[0].tokenarg;
 
     return nerr;
 }
@@ -344,7 +344,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true, false))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true, false, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -444,7 +444,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false, iscreator))
+                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false, iscreator, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -465,6 +465,12 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 }
                 lex.ignore(lex.MLCOM, mlcom);
 
+                for (const MethodIG::Arg& arg : m->args)
+                {
+                    if (!arg.callbackarg) continue;
+
+                    *lastifc->callback.add() = *arg.callback;
+                }
 
                 m->parse_docs();
 

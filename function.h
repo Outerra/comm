@@ -511,28 +511,34 @@ public:
     }
 
     ///A non-capturing lambda
-    template <class Fn, std::enable_if<std::is_constructible<R(*)(Args...), typename ptmf_to_pf<decltype(&Fn::operator())>::type>::value, bool>::type = true>
-    callback(Fn&& lambda) {
-        if constexpr (std::is_constructible<R(*)(Args...), Fn>::value) {
-            _fn.function = lambda;
+    template <typename Fn, typename CleanFn = std::remove_reference_t<Fn>,
+        std::enable_if_t<std::is_constructible_v<R(*)(Args...), typename ptmf_to_pf<decltype(&CleanFn::operator())>::type>, bool> = true>
+    callback(Fn&& lambda)
+    {
+        using NakedFn = std::remove_cvref_t<Fn>;
+        if constexpr (std::is_constructible_v<R(*)(Args...), NakedFn>) {
+            _fn.function = std::forward<Fn>(lambda);
             _caller = &call_static;
         }
         else {
-            function<R(Args...)> fn = std::move(lambda);
+            function<R(Args...)> fn = std::forward<Fn>(lambda);
             _fn.flambda = fn.eject();
             _caller = &call_flambda;
         }
     }
 
-    ///A non-capturing lambda
-    template <class Fn, std::enable_if<std::is_constructible<R(*)(callback_context&, Args...), typename ptmf_to_pf<decltype(&Fn::operator())>::type>::value, bool>::type = true>
-    callback(Fn&& lambda) {
-        if constexpr (std::is_constructible<R(*)(callback_context&, Args...), Fn>::value) {
-            _fn.function_context = lambda;
+    ///A non-capturing lambda with additional context argument
+    template <class Fn, typename CleanFn = std::remove_reference_t<Fn>,
+        std::enable_if_t<std::is_constructible_v<R(*)(callback_context&, Args...), typename ptmf_to_pf<decltype(&CleanFn::operator())>::type>, bool> = true>
+    callback(Fn&& lambda)
+    {
+        using NakedFn = std::remove_cvref_t<Fn>;
+        if constexpr (std::is_constructible_v<R(*)(callback_context&, Args...), NakedFn>) {
+            _fn.function_context = std::forward<Fn>(lambda);
             _caller = &call_static_context;
         }
         else {
-            function<R(callback_context&, Args...)> fn = std::move(lambda);
+            function<R(callback_context&, Args...)> fn = std::forward<Fn>(lambda);
             _fn.flambda_context = fn.eject();
             _caller = &call_flambda_context;
         }

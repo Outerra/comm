@@ -111,29 +111,59 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
         bspecptr = true;
     }
 
+    bool has_argname = false;
 
     if (lex.matches('(')) {
-        //a function argument [type] (*name)(arg1[,arg2]*)
-        if (!lex.matches('*')) {
-            //possibly a member fn
-            lex.match(lex.IDENT, memfnclass, "expecting class name");
+        //a possible function argument [type] (*name)(arg1[,arg2]*)
+        token rem = lex.remainder();
 
-            lex.match("::");
-            lex.match('*');
+        //find * within braces
+        bool hasptr = false;
+        while (rem)
+        {
+            char c = ++rem;
+            if (c == ')') {
+                rem.skip_whitespace();
+                if (rem.first_char() != '(') //not a function
+                    hasptr = false;
+                break;
+            }
+            if (c == '*') {
+                hasptr = true;
+            }
         }
 
-        lex.match(lex.IDENT, name, "expecting argument name");
-        lex.match(')');
+        if (hasptr)
+        {
+            if (!lex.matches('*')) {
+                //possibly a member fn
+                lex.match(lex.IDENT, memfnclass, "expecting class name");
 
-        //parse argument list as a block
-        fnargs = lex.match_block(lex.ROUND, true);
-        bfnarg = true;
+                lex.match("::");
+                lex.match('*');
+            }
+
+            has_argname = argname && lex.matches(lex.IDENT, name);
+            lex.match(')');
+
+            //parse argument list as a block
+            fnargs = lex.match_block(lex.ROUND, true);
+            bfnarg = true;
+        }
+        else
+        {
+            //not a function pointer
+            lex.push_back();
+        }
     }
-    else if (argname)
-        lex.match(lex.IDENT, name, "expecting argument name");
+
+    if (!bfnarg)
+    {
+        has_argname = argname && lex.matches(lex.IDENT, name);
+    }
 
     //match array
-    if (argname && lex.matches('[')) {
+    if (has_argname && lex.matches('[')) {
         if (bconst) {
             type.ins(0, "const ");
             tbasetype = token(type.ptr() + 6, type.ptre());
@@ -163,7 +193,7 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     bnoscript = false;
 
     //match default value
-    if (argname && lex.matches('=')) {
+    if (has_argname && lex.matches('=')) {
         //match everything up to a comma or a closing parenthesis
         bool was_square = lex.enable(lex.SQUARE, true);
         bool was_round = lex.enable(lex.ROUND, true);

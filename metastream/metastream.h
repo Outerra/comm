@@ -544,10 +544,11 @@ public:
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to variable to read/write to
     /// @return true if value was read or written and no default was used, false in meta phase
+    /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
     template<typename T>
-    bool member_indirect(const token& name, T*& v)
+    bool member_ptr(const token& name, T*& v)
     {
-        typedef typename std::remove_const<T>::type TNC;
+        using TNC = typename std::remove_const<T>::type;
 
         if (streaming()) {
             if (!v)
@@ -562,26 +563,37 @@ public:
         return false;
     }
 
-    ///Define a member variable referenced by a pointer (non-streamable) except const char*
+    template<typename T>
+    bool member_indirect(const token& name, T*& v) { return member_ptr(name, v); }
+
+    ///Define a member variable referenced by a smart pointer, assumed to be already allocated when streaming to/from
     /// @param name variable name, used as a key in output formats
     /// @param v pointer to variable to read/write to
-    /// @param streamed false variable should not be streamed, just a part of meta description, can point to 1..N items (default)
-    /// @param          true variable is indirectly referenced to by a pointer
+    /// @return true if value was read or written and no default was used, false in meta phase
     /// @note use member_optional or member_type for special handling when the pointer has to be allocated etc.
-    template<typename T>
-    bool member_ptr(const token& name, T*& v, bool streamed)
+    template<typename SmartPtr>
+        requires requires(SmartPtr& p) {
+            typename SmartPtr::element_type;
+            { *p };      // Must be dereferenceable
+        }
+    bool member_smartptr(const token& name, SmartPtr& v)
     {
-        typedef typename std::remove_const<T>::type TNC;
+        using T = typename SmartPtr::element_type;
+        using TNC = typename std::remove_const<T>::type;
 
         if (streaming()) {
+            if (!v)
+                throw exception() << "null pointer";
+
             *this || *(typename resolve_stream_enum<TNC>::type*)v;
             return true;
         }
         else
-            meta_variable_raw_ptr<TNC>(name, (ints)&v, streamed);
+            meta_variable_indirect<TNC>(name, (ints)&v);
 
         return false;
     }
+
 
     ///Define a raw pointer member variable to 1..N objects
     /// @param name variable name, used as a key in output formats
@@ -872,6 +884,63 @@ public:
         }
         else
             meta_variable_optional<T>(name, &v);
+
+        return used;
+    }
+
+    ///Define an optional variable. On read, value doesn't get overwritten if it wasn't present in the input stream
+    /// @param name variable name, used as a key in output formats
+    /// @param write false if value should not be written
+    /// @return true if value was read or written, always false in meta phase
+    template<typename T>
+    bool member_optional_ptr(const token& name, T*& v)
+    {
+        bool used = false;
+
+        if (_binw) {
+            used = write_optional(v);
+        }
+        else if (_binr) {
+            if (v)
+                used = read_optional(*v);
+            else {
+                v = read_optional<T>();
+                used = v != nullptr;
+            }
+        }
+        else
+            meta_variable_optional<T>(name, v);
+
+        return used;
+    }
+
+    ///Define an optional variable. On read, value doesn't get overwritten if it wasn't present in the input stream
+    /// @param name variable name, used as a key in output formats
+    /// @param write false if value should not be written
+    /// @return true if value was read or written, always false in meta phase
+    template<typename SmartPtr>
+        requires requires(SmartPtr& p) {
+            typename SmartPtr::element_type;
+            { *p };      // Must be dereferenceable
+        }
+    bool member_optional_smartptr(const token& name, SmartPtr& v)
+    {
+        using T = typename SmartPtr::element_type;
+        bool used = false;
+
+        if (_binw) {
+            used = write_optional(v ? &*v : nullptr);
+        }
+        else if (_binr) {
+            if (v)
+                used = read_optional(*v);
+            else {
+                v = read_optional<T>();
+                used = !!v;
+            }
+        }
+        else
+            meta_variable_optional<T>(name, (T*)nullptr);
 
         return used;
     }

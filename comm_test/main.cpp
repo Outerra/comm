@@ -226,12 +226,17 @@ void fntest(void(*pfn)(charstr&))
     hh(something());
 
     int z = 2;
+    auto lambda = [&](int, void*) { return z; };
+
     callback<int(int, void*)> fns = &something::funs;
     callback<int(int, void*)> fnm = &something::funm;
     callback<int(int, void*)> fnl1 = [](int, void*) { return -1; };
     callback<int(int, void*)> fnl2 = [](coid::callback_context& ctx, int a, void* b) { return static_cast<something*>(ctx.this__)->funm(a, b); };
     callback<int(int, void*)> fnz1 = [z](int, void*) { return z; };
     callback<int(int, void*)> fnz2 = [z](coid::callback_context&, int, void*) { return z; };
+    callback<int(int, void*)> fnz3 = [&](int, void*) { return z; };
+    callback<int(int, void*)> fnc1 = lambda;
+    callback<int(int, void*)> fnc2 = std::move(lambda);
     callback<int(int, void*)> fn2 = &anything::funm2;
     callback<int(int, void*)> fm3 = &multithing::funm3;
     callback<int(int, void*)> fn3 = &multithing::funn3;
@@ -247,6 +252,9 @@ void fntest(void(*pfn)(charstr&))
     DASSERT(fnl2.invoke_with_this(&s, 1, 0) == 1);
     DASSERT(fnz1(1, 0) == 2);
     DASSERT(fnz2(1, 0) == 2);
+    DASSERT(fnz3(1, 0) == 2);
+    DASSERT(fnc1(1, 0) == 2);
+    DASSERT(fnc2(1, 0) == 2);
     DASSERT(fn2.invoke_with_this(&s, 1, 0) == 1);
     DASSERT(fm3.invoke_with_this(&m, 1, 0) == 1);
     DASSERT(fn3.invoke_with_this(&m, 1, 0) == 1);

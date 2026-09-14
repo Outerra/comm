@@ -75,14 +75,16 @@ $-(/if)$
     $name$_js_dispatcher() $-(if ?event)$ : _bound_events(false)$(/if)$
     {}
 
-    explicit $name$_js_dispatcher($ns suffix="::"$$name$* orig) $(if ?event)$: _bound_events(false) $(/if)${
+    explicit $name$_js_dispatcher($ns suffix="::"$$name$* orig)$(if ?event)$: _bound_events(false)$(/if)$
+    {
         _base.create(orig);
         _vtable = _base->vtable();
 
         _host = _base->host<policy_intrusive_base>();
     }
 
-    explicit $name$_js_dispatcher(policy_intrusive_base* host) $-(if ?event)$ : _bound_events(false)$(/if)$ {
+    explicit $name$_js_dispatcher(policy_intrusive_base* host)$-(if ?event)$ : _bound_events(false)$(/if)$
+    {
         set_host(host, this, 0);
     }
 
@@ -144,7 +146,8 @@ $-[event]$
     virtual $return.type$ $name$($[args rest="," after=" "]$ $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$ override;
 $-[/event]$
 
-    virtual bool is_bound(event m) override {
+    virtual bool is_bound(event m) override
+    {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
         if (!_bound_events) {
             v8::HandleScope handle_scope__(iso);
@@ -157,13 +160,20 @@ $-[/event]$
         return !_events[id].IsEmpty() && !_events[id].Get(iso)->IsUndefined();
     }
 
-    virtual void force_bind_script_events() override {
+    virtual void force_bind_script_events() override
+    {
         v8::Isolate* iso = v8::Isolate::GetCurrent();
         v8::HandleScope handle_scope__(iso);
         v8::TryCatch js_trycatch(iso);
 
         bind_events(context(iso), true, v8::Local<v8::Value>());
     }
+
+    // --- interface method callbacks ---
+
+$-[callback]$
+    $return.type$ callback_$name$(v8::Local<v8::Function> fn$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$;
+$-[/callback]$
 
 private:
 
@@ -181,9 +191,7 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     v8::Isolate* iso = args.GetIsolate();
 
     if (args.Length() < $ninargs_nondef$ || args.Length() > $ninargs$) { //in/inout arguments
-        coid::charstr tmp = "Wrong number of arguments in ";
-        tmp << "$..name$.$name$";
-        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, tmp);
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, "Wrong number of arguments in $..name$.$name$");
     }
 
     v8::HandleScope handle_scope__(iso);
@@ -195,13 +203,19 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    ::js::interface_wrapper_base<$..ns rest="::"$::$..name$>* ifc = static_cast<::js::interface_wrapper_base<$..ns rest="::"$::$..name$>*>
+    $..name$_js_dispatcher* ifc = static_cast<$..name$_js_dispatcher*>
         (v8::Handle<v8::External>::Cast(intobj__)->Value());
 
+$-[args ?inarg !nojs after="\n"]$
+$-(if ?callback)$
+    if (args[$@order$].IsEmpty() || !args[$@order$]->IsFunction())
+        return v8::queue_js_exception(iso, v8::Exception::SyntaxError, "Argument given to $name$ is not a function");
+$-(/if)$
+$-[/args]$
     auto R_ = ifc ? ifc->_real() : 0;
     if (!R_) {
-        coid::charstr tmp = "Null interface object in ";
-        tmp << "$..name$.$name$";
+        coid::charstr tmp(STACK_STRING(64));
+        tmp << "Null interface object in $..name$.$name$";
         return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
     }
 
@@ -211,12 +225,14 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     try {
         //stream the arguments in
 $-[args ?inarg !nojs after="\n"]$
-  $-(if !iref)$
+  $-(if !iref !callback)$
         static_assert(coid::has_metastream_operator<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::value, "missing metastream operator for '$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$'");
   $-(/if)$
 $-[/args]$
 $-[args ?inarg !nojs after="\n"]$
-  $-(if !defval.empty ?ptr)$
+  $-(if ?callback)$
+        auto fn_$name$ = [&]($[callbackfn.args rest=", "]$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/callbackfn.args]$) -> $callbackfn.return.type$ { return ifc->callback_$..name$__$name$(args[$@order$].As<v8::Function>()$[callbackfn.args]$, $name$$[/callbackfn.args]$); };
+  $-(elif !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$* $name$ = &$name$__tmp;
         if ($@order$ < args.Length())
@@ -240,7 +256,7 @@ $-[args ?outarg !inarg]$
 $-[/args]$
 
         //invoke
-        $(if !return.type="void")$$return.type$ rval__ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
+        $(if !return.type="void")$$return.type$ rval__ = $(/if)$R_->$name$($[args rest=", "]$ $-(if ?callback)$fn_$-(elif ?ptr ?outarg)$&$-(elif ?ptr ?defval.empty !specptr)$&$(/if)$ $-(if ?nojs)$$defval$$(elif)$$name$$(/if)$$[/args]$);
 $-(if ?nalloutargs)$
 
         //stream out
@@ -268,6 +284,108 @@ $-(/if)$
 }
 
 $-[/method]$
+$-[callback]$
+////////////////////////////////////////////////////////////////////////////////
+$return.type$ $..name$_js_dispatcher::callback_$name$(v8::Local<v8::Function> fn__$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
+{
+    v8::Isolate* iso = v8::Isolate::GetCurrent();
+
+$-(if ?internal)$
+    throw coid::exception("method not marked for scripting");
+$-(elif)$
+    v8::HandleScope handle_scope__(iso);
+    v8::Handle<v8::Context> ctx__ = context(iso);
+    v8::Context::Scope context_scope__(ctx__);
+    v8::TryCatch js_trycatch__(iso);
+
+    // prepare the "in" arguments
+$-[args ?inarg !iref]$
+    static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+$-[/args]$
+$-(if ?ninargs)$
+    v8::Handle<v8::Value> __inargs[] = {
+$-[args ?inarg rest=","]$
+        to_v8$(if ?volatile)$_volatile$(/ if)$<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::read($name$)
+$-[/args]$
+    };
+
+$-(/if)$
+    //  callback call
+    v8::Local<v8::Value> r__ = fn__->Call(
+        ctx__,
+        _object.Get(iso),
+        $(if ?ninargs)$$ninargs$, __inargs$(elif)$0, 0$(/if)$).ToLocalChecked();
+
+$-[args ?inarg]$$(if ?volatile)$
+    to_v8$(if ?volatile)$_volatile$(/if)$<$basetype$>::cleanup(__inargs[$@order$]);$(/if)$
+$-[/args]$
+
+    if (js_trycatch__.HasCaught())
+        ::js::script_handle::throw_exception_from_js_error(js_trycatch__, "$..ns suffix="::"$js::$..name$.$name$");
+    // gather results
+$-(if !noutargs)$
+
+ $-(if !return.type="void")$
+  $-(if | ?retifc ?return.iref ?return.cref)$
+    $return.type$ _rval_;
+  $-(elif)$
+    static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
+    threadcached<$return.type$> _rval_;
+  $-(/if)$
+    write_from_v8(r__, _rval_);
+ $-(/if)$
+$-(elif)$
+ $-(if ?return.type="void" ?noutargs="1")$
+
+  $-[args ?outarg]$
+   $-(if !iref)$
+    static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+   $-(/if)$
+   $-(if ?ptr)$
+    if ($name$)
+        write_from_v8(r__, *$name$);
+   $-(elif)$
+    write_from_v8(r__, $name$);
+   $-(/if)$
+  $-[/args]$
+ $-(elif)$
+
+    if (!r__->IsObject()) throw coid::exception("invalid params");
+    v8::Local<v8::Object> obj__ = r__->ToObject(ctx__).ToLocalChecked();
+  $-(if !return.type="void")$
+
+    //return value
+   $-(if | ?retifc ?return.iref ?return.cref)$
+    $return.type$ _rval_;
+    write_from_v8(r__, _rval_);
+   $-(elif)$
+    static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
+    threadcached<$return.type$> _rval_;
+    write_from_v8(obj__->Get(ctx__, v8::symbol("$$ret", iso)).ToLocalChecked(), _rval_);
+   $-(/if)$
+  $-(/if)$
+  $-[args ?outarg]$
+
+   $-(if !iref)$
+    static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+   $-(/if)$
+   $-(if ?ptr)$
+    if ($name$)
+        write_from_v8(obj__->Get(ctx__, v8::symbol("$name$", iso)).ToLocalChecked(), *$name$);
+   $-(elif)$
+    write_from_v8(obj__->Get(ctx__, v8::symbol("$name$", iso)).ToLocalChecked(), $name$);
+   $-(/if)$
+  $-[/args]$
+ $-(/if)$
+$(/if)-$
+
+$-(if !return.type="void")$
+    return _rval_;
+$-(/if)$
+$-(/if)$
+}
+
+$-[/callback]$
 $-[event]$
 ////////////////////////////////////////////////////////////////////////////////
 $return.type$ $..name$_js_dispatcher::$name$($[args rest="," after=" "]$ $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$

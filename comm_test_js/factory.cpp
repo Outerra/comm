@@ -13,24 +13,33 @@ iref<item_interface> factory::create_item()
 {
     iref<item>* ptr = _items.add();
     ptr->create(new item());
-    
+
     return item_interface::_get(ptr->get());
 }
 
 void factory::initialize()
 {
-    static const coid::charstr script = "var ITEM = {\n"
-        "return_something() {\n"
-        "return 5;\n"
-        "}\n"
-        "}\n"
-        "\n"
-        "function do_something()\n"
-        "{\n"
-        "var it = this.create_item();\n"
-        "it.$rebind_events(ITEM);\n"
-        "return 0;\n"
-        "}";
+    static const coid::charstr script = R"(
+var ITEM = {
+    return_something : function() {
+        return 5;
+    }
+};
+
+//event of factory class implemented in js
+function do_something()
+{
+    var it = this.create_item();
+    it.$rebind_events(ITEM);
+
+    it.enumerate(6, function(k, name) {
+        $log(name + ' ');
+        this.print(k + 1);
+    });
+
+    return 0;
+}
+)";
 
     v8::HandleScope scope(v8::Isolate::GetCurrent());
 
@@ -43,7 +52,7 @@ void factory::initialize()
         int result = do_something();
     }
     catch (std::exception& e) {
-        coidlog_error("",e.what());
+        coidlog_error_src("", e.what());
     }
 }
 

@@ -4,6 +4,7 @@
 
 #include <comm/intergen/ifc.h>
 #include <comm/str.h>
+#include <comm/function.h>
 
 //ifc{
 struct test;
@@ -100,6 +101,8 @@ public:
     ifc_fn int hallo(int a, const coid::token& b, ifc_out coid::charstr& c) {
         return 0;
     }
+
+    ifc_fn void fn_with_callback(int a, const coid::callback<void(int jozo)>& c) const;
 
     ifc_fn void xooo() {}
 

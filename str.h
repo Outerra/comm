@@ -2369,13 +2369,47 @@ public:
         return res;
     }
 
-    charstr operator + (bool) const = delete;
+    [[nodiscard]] charstr operator + (bool) const = delete;
 
     [[nodiscard]] charstr operator + (char c) const
     {
         charstr res = *this;
         res.append(c);
         return res;
+    }
+
+    [[nodiscard]] charstr operator + (int8 i) const { charstr tmp = *this; tmp.append_num(10, (int)i);  return tmp; }
+    [[nodiscard]] charstr operator + (uint8 i) const { charstr tmp = *this; tmp.append_num(10, (uint)i); return tmp; }
+    [[nodiscard]] charstr operator + (int16 i) const { charstr tmp = *this; tmp.append_num(10, (int)i);  return tmp; }
+    [[nodiscard]] charstr operator + (uint16 i) const { charstr tmp = *this; tmp.append_num(10, (uint)i); return tmp; }
+    [[nodiscard]] charstr operator + (int32 i) const { charstr tmp = *this; tmp.append_num(10, (int)i);  return tmp; }
+    [[nodiscard]] charstr operator + (uint32 i) const { charstr tmp = *this; tmp.append_num(10, (uint)i); return tmp; }
+    [[nodiscard]] charstr operator + (int64 i) const { charstr tmp = *this; tmp.append_num(10, i);       return tmp; }
+    [[nodiscard]] charstr operator + (uint64 i) const { charstr tmp = *this; tmp.append_num(10, i);       return tmp; }
+
+#if defined(SYSTYPE_WIN)
+    [[nodiscard]] charstr operator + (long i) const { charstr tmp = *this; tmp.append_num(10, (ints)i);  return tmp; }
+    [[nodiscard]] charstr operator + (ulong i) const { charstr tmp = *this; tmp.append_num(10, (uints)i); return tmp; }
+#endif
+
+    charstr operator + (float d) const { charstr tmp = *this; tmp.append_float(d, 6); return tmp; }
+    charstr operator + (double d) const { charstr tmp = *this; tmp.append_double(d, 10); return tmp; }
+
+    ///Formatted numbers - int/uint
+    template<int WIDTH, uint BASE, int ALIGN, class NUM>
+    [[nodiscard]] charstr operator + (const num_fmt_object<WIDTH, BASE, ALIGN, NUM>& v) const { charstr tmp = *this; tmp.append_num(BASE, v.value, WIDTH, ALIGN); return tmp; }
+
+    ///Formatted numbers - floats
+    template<int WIDTH, int ALIGN>
+    [[nodiscard]] charstr operator + (const float_fmt<WIDTH, ALIGN>& v) const {
+        charstr tmp = *this;
+        if (WIDTH == 0)
+            tmp.append_double(v.value, v.nfrac);
+        else {
+            char* buf = tmp.get_append_buf(WIDTH);
+            charstrconv::append_fixed(buf, buf + WIDTH, v.value, v.nfrac, (EAlignNum)ALIGN);
+        }
+        return tmp;
     }
 
 protected:

@@ -1,6 +1,12 @@
-#include<v8/v8.h>
+#include <v8/v8.h>
 #include <v8/libplatform.h>
+#include <comm/dir.h>
+
 #include "factory.hpp"
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 
 namespace v8 {
 
@@ -16,8 +22,12 @@ namespace v8 {
 
 }
 
-int main() 
+int main()
 {
+    coid::charstr cwd = coid::directory::get_cwd();
+    coid::directory::append_path(cwd, "../../../../../../bin/c5e", false, '/');
+
+    SetDllDirectory(cwd.c_str());
 
     // Initialize V8.
     //v8::V8::InitializeICU();
@@ -35,7 +45,7 @@ int main()
     v8::HandleScope scope(iso);
 
     iref<factory> A = factory::get();
-    
+
     A->initialize();
 
     int result = A->run();
