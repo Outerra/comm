@@ -46,8 +46,8 @@ ifc_in:ifc_out:ifc_inout:ifc_ret");
     def_string(".macro", "#", "\r", "escape");
     def_string(".macro", "#", "", "escape");
 
-    IFC_LINE_COMMENT = def_block("ifc1", "//ifc{", "//}ifc", "");
-    IFC_BLOCK_COMMENT = def_block("ifc2", "/*ifc{", "}ifc*/", "");
+    IFC_LINE_COMMENT = def_block("ifc1", "//ifc{", "//}ifc", ".comment .blkcomment");
+    IFC_BLOCK_COMMENT = def_block("ifc2", "/*ifc{", "}ifc*/", ".comment .blkcomment");
 
     IFC_DISPATCH_LINE_COMMENT = def_block("ifcd1", "//ifc-dispatch{", "//}ifc-dispatch", "");
     IFC_DISPATCH_BLOCK_COMMENT = def_block("ifcd2", "/*ifc-dispatch{", "}ifc-dispatch*/", "");
