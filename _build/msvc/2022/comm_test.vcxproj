@@ -406,6 +406,8 @@
     <ClCompile Include="..\..\..\comm_test\intergen\client_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\data.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\intergen\data_client_test.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\interface.intergen.cpp" />
+    <ClCompile Include="..\..\..\comm_test\intergen\test.intergen.cpp" />
     <ClCompile Include="..\..\..\comm_test\main.cpp" />
   </ItemGroup>
   <ItemGroup>

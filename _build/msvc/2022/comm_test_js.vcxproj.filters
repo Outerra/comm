@@ -4,13 +4,26 @@
     <ClCompile Include="..\..\..\comm_test_js\factory.cpp" />
     <ClCompile Include="..\..\..\comm_test_js\item.cpp" />
     <ClCompile Include="..\..\..\comm_test_js\main.cpp" />
-    <ClCompile Include="..\..\..\comm_test_js\factory.intergen.js.cpp" />
-    <ClCompile Include="..\..\..\comm_test_js\item.intergen.js.cpp" />
-    <ClCompile Include="..\..\..\comm_test_js\factory.intergen.cpp" />
-    <ClCompile Include="..\..\..\comm_test_js\item.intergen.cpp" />
+    <ClCompile Include="..\..\..\comm_test_js\factory.intergen.cpp">
+      <Filter>generated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\comm_test_js\factory.intergen.js.cpp">
+      <Filter>generated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\comm_test_js\item.intergen.cpp">
+      <Filter>generated</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\comm_test_js\item.intergen.js.cpp">
+      <Filter>generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <hpp Include="..\..\..\comm_test_js\factory.hpp" />
     <hpp Include="..\..\..\comm_test_js\item.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="generated">
+      <UniqueIdentifier>{fc78fd7e-a5c6-449a-8c36-62b27fc7338d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

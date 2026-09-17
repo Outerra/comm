@@ -125,7 +125,7 @@ public:
         //invoke passed callback (intergen interface member function)
         //(_ifc->iface<intergen_interface>()->*(fn))(1, nullptr);
 
-        fn(_ifc->iface<intergen_interface>(), 1, nullptr);
+        fn.invoke_with_this(_ifc->iface<intergen_interface>(), 1, nullptr);
     }
 
     ifc_fnx(@unload) static bool unload(const coid::token& client, const coid::token& module, coid::binstring* bstr) {

@@ -83,11 +83,11 @@ public:
         return new thing;
     }
 
-    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing() {
+    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing2() {
         return new thing;
     }
 
-    ifc_fnx(get3 ^singleton) static const iref<n1::n2::thing>& get_thing() {
+    ifc_fnx(get3 ^singleton) static const iref<n1::n2::thing>& get_thing3() {
         return new thing;
     }
 
@@ -104,7 +104,14 @@ public:
 
     ifc_fn void fn_with_callback(int a, const coid::callback<void(int jozo)>& c) const;
 
-    ifc_fn void xooo() {}
+    //ifc{
+    enum class enumo {
+        zero,
+        one,
+    };
+    //}ifc
+
+    ifc_fn void xooo(enumo o) {}
 
     ifc_fn void noargs() {}
 
