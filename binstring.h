@@ -515,15 +515,18 @@ public:
     uint8* reserve(uints len) { return _tstr.reserve(len, true); }
 
     ///Reset string to empty but keep the memory
-    void reset() {
+    binstring& reset() {
         _tstr.reset();
         _offset = 0;
+        return *this;
     }
 
     binstring& reset_read() {
         _offset = 0;
         return *this;
     }
+
+    binstring& clear() { reset(); return *this; }
 
     ~binstring() {}
 
