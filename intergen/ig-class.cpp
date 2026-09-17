@@ -465,11 +465,14 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 }
                 lex.ignore(lex.MLCOM, mlcom);
 
-                for (const MethodIG::Arg& arg : m->args)
+                if (!m->binternal)
                 {
-                    if (!arg.callbackarg) continue;
+                    for (const MethodIG::Arg& arg : m->args)
+                    {
+                        if (!arg.callbackarg) continue;
 
-                    *lastifc->callback.add() = *arg.callback;
+                        *lastifc->callback.add() = *arg.callback;
+                    }
                 }
 
                 m->parse_docs();

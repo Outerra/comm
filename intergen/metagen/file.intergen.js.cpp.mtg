@@ -171,7 +171,7 @@ $-[/event]$
 
     // --- interface method callbacks ---
 
-$-[callback]$
+$-[callback !internal]$
     $return.type$ callback_$name$(v8::Local<v8::Function> fn$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$ $-(if ?defval)$ = $defval$$(/if)$$[/args]$) $-(if ?const)$ const$(/if)$;
 $-[/callback]$
 
@@ -284,7 +284,7 @@ $-(/if)$
 }
 
 $-[/method]$
-$-[callback]$
+$-[callback !internal]$
 ////////////////////////////////////////////////////////////////////////////////
 $return.type$ $..name$_js_dispatcher::callback_$name$(v8::Local<v8::Function> fn__$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
 {

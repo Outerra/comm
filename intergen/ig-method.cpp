@@ -140,6 +140,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
                     else
                     {
                         arg->callbackarg = true;
+                        arg->callback->binternal = binternal;
                     }
                 }
             }

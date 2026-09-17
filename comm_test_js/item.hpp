@@ -20,7 +20,7 @@ public:
     }
 
     ifc_fnx(!) void memfn_callback(coid::callback<void(int, void*)>&& fn) {
-        fn(_ifc->iface<intergen_interface>(), 1, nullptr);
+        fn.invoke_with_this(_client->iface<intergen_interface>(), 1, nullptr);
     }
 
     ifc_fn void print(int k)
