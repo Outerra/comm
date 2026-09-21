@@ -105,9 +105,9 @@ $-(if !virtual)$
         _vtable1 = new ifn_t[$method.@size !static$];
 $-[method !static]$
 $-(if !return.ifc_type="none")$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$(if ?return.nested)$::$classname$::$(/if)-$ $return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?nested)$::$..classname$::$(/if)-$ $type$ $-(if ?fnarg)$($memfnclass after="::"$*)($fnargs$)$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&wrap_$intname$));
 $-(elif)$
-        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?fnarg)$$type$($memfnclass after="::"$*)($fnargs$)$(elif)$$type$$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
+        _vtable1[$@order$] = reinterpret_cast<ifn_t>(static_cast<$(if ?return.nested)$::$classname$::$(/if)-$ $return.type$(policy_intrusive_base::*)($[args rest=","]$ $-(if ?nested)$::$..classname$::$(/if)-$ $type$ $-(if ?fnarg)$($memfnclass after="::"$*)($fnargs$)$(/if)-$ $size$$[/args]$)$(if ?const)$const$(/if)$>(&::$classname$::$intname$));
 $-(/if)$
 $-[/method]-$
 

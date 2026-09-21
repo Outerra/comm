@@ -83,13 +83,9 @@ public:
         return new thing;
     }
 
-    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing2() {
-        return new thing;
-    }
+    ifc_fnx(get2) static const iref<n1::n2::thing>& get_thing2();
 
-    ifc_fnx(get3 ^singleton) static const iref<n1::n2::thing>& get_thing3() {
-        return new thing;
-    }
+    ifc_fnx(get3^ singleton) static const iref<n1::n2::thing>& get_thing3();
 
     /*ifc_fn*/  void createScenario(const coid::charstr& name);
 

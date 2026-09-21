@@ -26,7 +26,7 @@ charstr& MethodIG::Arg::match_type(iglexer& lex, charstr& type)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-bool MethodIG::Arg::parse(iglexer& lex, bool argname)
+bool MethodIG::Arg::parse(iglexer& lex, const dynarray<iglexer::nested_type>& nested_types, bool argname)
 {
     //arg: [ifc_in|ifc_out|ifc_inout|] [const] type
     //type: [class[<templarg>]::]* type[<templarg>] [[*|&] [const]]*
@@ -175,6 +175,9 @@ bool MethodIG::Arg::parse(iglexer& lex, bool argname)
     }
 
     basetype = tbasetype;
+
+    const iglexer::nested_type* nt = nested_types.contains(basetype);
+    bnested = nt != nullptr;
 
     biref = tbasetype.begins_with("iref<");
     bcref = tbasetype.begins_with("coref<");

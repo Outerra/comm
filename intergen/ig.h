@@ -17,7 +17,8 @@ extern stdoutstream out;
 struct Class;
 
 ////////////////////////////////////////////////////////////////////////////////
-struct paste_block {
+struct paste_block
+{
     charstr block;
     charstr condx;                  //< optional interface name to apply to
     dynarray<charstr> namespc;
@@ -71,9 +72,16 @@ public:
 
     iglexer();
 
+    struct nested_type
+    {
+        charstr type_name;
+        int ecs;
+
+        bool operator == (const token& t) const { return type_name == t; }
+    };
 
     ///Find method mark within current class declaration
-    int find_method(const token& classname, dynarray<paste_block>& classpasters, dynarray<charstr>& commlist);
+    int find_method(const token& classname, dynarray<paste_block>& classpasters, dynarray<nested_type>& nested_types, dynarray<charstr>& comment_list);
 
     charstr& syntax_err() {
         prepare_exception() << "syntax error: ";
@@ -227,6 +235,7 @@ struct MethodIG
         bool biref = false;
         bool bcref = false;
         bool bconst = false;            //< true if the type had const qualifier
+        bool bnested = false;           //< type is a nested enum/class/struct in host class
 
         meta::arg::ex_type struct_type = meta::arg::ex_type::unspecified;
         meta::arg::ifc_type ifc_type = meta::arg::ifc_type::none;
@@ -244,7 +253,7 @@ struct MethodIG
             return type == a.type && arsize == a.arsize;
         }
 
-        bool parse(iglexer& lex, bool argname);
+        bool parse(iglexer& lex, const dynarray<iglexer::nested_type>& nested_types, bool argname);
 
         static charstr& match_type(iglexer& lex, charstr& dst);
 
@@ -263,6 +272,7 @@ struct MethodIG
                 m.member("ifckwds", p.ifckwds);
                 m.member("doc", p.doc);
                 m.member("const", p.bconst);
+                m.member("nested", p.bnested);
                 {
                     static const meta::arg::ifc_type types[] = {meta::arg::ifc_type::none, meta::arg::ifc_type::ifc_class, meta::arg::ifc_type::ifc_struct};
                     static const char* const strings[] = {"none", "ifc_class", "ifc_struct", nullptr};
@@ -337,7 +347,7 @@ struct MethodIG
     //    ret.fix_copy(src.ret);
     //}
 
-    bool parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname);
+    bool parse(iglexer& lex, Class& host_class, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname);
 
     void parse_docs();
 
@@ -586,8 +596,6 @@ struct Class
     charstr templsub;
     charstr namespc;                    //< namespace with the trailing :: (if not empty)
     charstr ns;                         //< namespace without the trailing ::
-    bool noref = true;
-    bool datahost = false;              //< data-type host
 
     dynarray<charstr> namespaces;
     dynarray<Method> method;
@@ -595,7 +603,10 @@ struct Class
     dynarray<Interface> iface_data;
 
     dynarray<paste_block> classpasters;
+    dynarray<iglexer::nested_type> nested_types;
 
+    bool noref = true;
+    bool datahost = false;              //< data-type host
 
     bool parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& namespcs, dynarray<paste_block>* pasters);
 

@@ -46,8 +46,8 @@ ifc_in:ifc_out:ifc_inout:ifc_ret");
     def_string(".macro", "#", "\r", "escape");
     def_string(".macro", "#", "", "escape");
 
-    IFC_LINE_COMMENT = def_block("ifc1", "//ifc{", "//}ifc", ".comment .blkcomment");
-    IFC_BLOCK_COMMENT = def_block("ifc2", "/*ifc{", "}ifc*/", ".comment .blkcomment");
+    IFC_LINE_COMMENT = def_block("ifc1", "//ifc{", "//}ifc", "comment blkcomment");
+    IFC_BLOCK_COMMENT = def_block("ifc2", "/*ifc{", "}ifc*/", "comment blkcomment");
 
     IFC_DISPATCH_LINE_COMMENT = def_block("ifcd1", "//ifc-dispatch{", "//}ifc-dispatch", "");
     IFC_DISPATCH_BLOCK_COMMENT = def_block("ifcd2", "/*ifc-dispatch{", "}ifc-dispatch*/", "");
@@ -61,7 +61,7 @@ ifc_in:ifc_out:ifc_inout:ifc_ret");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int iglexer::find_method(const token& classname, dynarray<paste_block>& classpasters, dynarray<charstr>& commlist)
+int iglexer::find_method(const token& classname, dynarray<paste_block>& classpasters, dynarray<nested_type>& nested_types, dynarray<charstr>& comment_list)
 {
     //DASSERT( ignored(CURLY) ); //not to catch nested {}
 
@@ -73,15 +73,47 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
         ignore(SLCOM, false);
 
         int ic = matches_either(IFC_LINE_COMMENT, IFC_BLOCK_COMMENT);
-        if (ic) {
+        if (ic)
+        {
             complete_block();
 
-            paste_block* pb = classpasters.add();
+            token ifc_block = tok;
+            ifc_block.skip_space().trim_whitespace();
+            token cond = ifc_block.get_line();
+            ifc_block.skip_whitespace();
 
-            token t = tok;
-            t.skip_space().trim_whitespace();
-            token cond = t.get_line();
-            pb->block = t;
+            //if ifc_block contains enum/class/struct nested classes, we need to register those and mark method arguments that use them
+            bool has_nested = ifc_block.contains("enum") || ifc_block.contains("class") || ifc_block.contains("struct");
+            if (has_nested)
+            {
+                iglexer nestlex;
+                nestlex.bind(ifc_block);
+
+                while (1)
+                {
+                    const lextoken& ntok = nestlex.next();
+                    if (ntok.end())
+                        break;
+                    int ecs = 0;
+                    if (ntok == "enum"_T) ecs = 1;
+                    else if (ntok == "class"_T) ecs = 2;
+                    else if (ntok == "struct"_T) ecs = 3;
+                    if (!ecs)
+                        continue;
+
+                    if (ecs == 1)
+                        nestlex.matches("class"); //enum class
+
+                    token type_name = nestlex.match(IDENT);
+
+                    nested_type& nt = *nested_types.add();
+                    nt.type_name = type_name;
+                    nt.ecs = ecs;
+                }
+            }
+
+            paste_block* pb = classpasters.add();
+            pb->block = ifc_block;
             //pb->namespc = namespc;
             pb->pos = paste_block::position::inside_class;
             pb->in_dispatch = false;
@@ -96,8 +128,9 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
         if (mc == 2)
             complete_block();
 
-        if (mc) {
-            charstr& txt = commlist.get_or_add(nv++);
+        if (mc)
+        {
+            charstr& txt = comment_list.get_or_add(nv++);
             txt.reset();
 
             token t = last().val;
@@ -126,7 +159,7 @@ int iglexer::find_method(const token& classname, dynarray<paste_block>& classpas
             return tok.termid + 1;
         }
         else if (matches(IGKWD)) {
-            commlist.resize(nv);
+            comment_list.resize(nv);
             return -1 - tok.termid;
         }
         else if (matches('{')) {

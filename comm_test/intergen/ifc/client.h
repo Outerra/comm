@@ -12,9 +12,7 @@
 #include <comm/commexception.h>
 #include <comm/intergen/ifc.h>
 
-// ***
-// block placed before the generated client classes
-// ***
+
 
 struct flags {
     int a;
@@ -29,9 +27,7 @@ struct flags {
 };
 
 namespace ab {
-// ***
-// block placed inside namespace
-// ***
+
 }
 
 namespace ab {
@@ -46,7 +42,7 @@ class client
     : public intergen_interface
 {
 public:
-    typedef int sometype;
+typedef int sometype;
 
     virtual ~client() {
         if (_cleaner)
@@ -221,15 +217,11 @@ protected:
     bool set_host(policy_intrusive_base*, intergen_interface*, iref<client>* pout);
 };
 
-// ***
-// block placed after the generated client classes
-// ***
+
 
 namespace ab {
 namespace cd {
-// ***
-// block placed inside namespace after client class, specific interface
-// ***
+
 }
 }
 

@@ -3,8 +3,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Parse function declaration after ifc_fn
-bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname)
+bool MethodIG::parse(iglexer& lex, Class& host_class, const charstr& extifc, dynarray<forward>& fwds, bool isevent, bool iscreator, bool nomethodname)
 {
+    const charstr& host = host_class.classname;
+    const charstr& ns = host_class.namespc;
     file = lex.get_current_file();
     line = lex.current_line();
 
@@ -13,7 +15,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
     //rettype fncname '(' ...
 
-    if (!ret.parse(lex, false))
+    if (!ret.parse(lex, host_class.nested_types, false))
         throw lex.exc();
 
     ret.name = "return";
@@ -84,7 +86,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
 
     if (!lex.matches(')')) {
         do {
-            if (!args.add()->parse(lex, true))
+            if (!args.add()->parse(lex, host_class.nested_types, true))
                 throw lex.exc();
 
             Arg* arg = args.last();
@@ -123,7 +125,7 @@ bool MethodIG::parse(iglexer& lex, const charstr& host, const charstr& ns, const
                     arg->callback = new MethodIG;
                     bool cstate;
                     try {
-                        cstate = arg->callback->parse(lextmp, host, charstr(), charstr(), fwds, true, false, true);
+                        cstate = arg->callback->parse(lextmp, host_class, charstr(), fwds, true, false, true);
                         arg->callback->name << name << "__" << arg->name;
                     }
                     catch (const std::exception&) {

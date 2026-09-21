@@ -28,5 +28,15 @@ public:
         static coid::stdoutstream out;
         out << k << '\n';
     }
+
+    //ifc{
+    enum class enumo {
+        zero,           //< blah
+        one,            //< ooo
+    };
+    //}ifc
+
+    ifc_fn void enum_param(enumo o) {}
+
 };
 

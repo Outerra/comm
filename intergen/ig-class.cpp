@@ -107,12 +107,12 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
     //ignore nested blocks
     //lex.ignore(lex.CURLY, true);
 
-    dynarray<charstr> commlist;
+    dynarray<charstr> comment_list;
     dynarray<Interface>* lastifaces = 0;
     Interface* lastifc = 0;
 
     int mt;
-    while (0 != (mt = lex.find_method(classname, classpasters, commlist)))
+    while (0 != (mt = lex.find_method(classname, classpasters, nested_types, comment_list)))
     {
         if (mt < 0) {
             //interface definitions
@@ -216,7 +216,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 ifc->line = lex.current_line();
 
                 //ifc->nifc_methods = 0;
-                ifc->comments.takeover(commlist);
+                ifc->comments.takeover(comment_list);
 
                 lex.match('(');
                 ifc->bdefaultcapture = lex.matches_either('+', '-') == 1;
@@ -333,7 +333,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 MethodIG* m = lastifc->event.add();
 
-                m->comments.takeover(commlist);
+                m->comments.takeover(comment_list);
                 m->binternal = binternal > 0 || lastifc->bnoscript;
                 m->bimplicit = bimplicit;
                 m->bduplicate = duplicate != 0;
@@ -344,7 +344,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, true, false, false))
+                if (!m->parse(lex, *this, extifcname, lastifc->fwds, true, false, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {
@@ -433,7 +433,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
 
                 MethodIG* m = lastifc->method.add();
 
-                m->comments.takeover(commlist);
+                m->comments.takeover(comment_list);
                 m->binternal = binternal > 0 || lastifc->bnoscript;
                 m->bduplicate = duplicate != 0;
                 m->bimplicit = bimplicit;
@@ -444,7 +444,7 @@ bool Class::parse(iglexer& lex, charstr& templarg_, const dynarray<charstr>& nam
                 if (m->bretifc)
                     m->ret.ifc_type = extfn_class ? meta::arg::ifc_type::ifc_class : meta::arg::ifc_type::ifc_struct;
 
-                if (!m->parse(lex, classname, namespc, extifcname, lastifc->fwds, false, iscreator, false))
+                if (!m->parse(lex, *this, extifcname, lastifc->fwds, false, iscreator, false))
                     ++ncontinuable_errors;
 
                 const MethodIG* old = lastifc->method.find_if([m](const MethodIG& o) {

@@ -44,8 +44,8 @@ class $name$
     : public $(if ?base)$$base$$(elif)$intergen_interface$(/if)$
 {
 public:
-$-[pasteinners]$
-$@value$
+$-[pasteinners first="\r\n"]$
+    $@value$
 $-[/pasteinners]$
 $-(if ?varname ?destroy.name.empty)$
 
