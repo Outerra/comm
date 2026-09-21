@@ -176,9 +176,9 @@ V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 //#define V8_FAST_STREAMER(T,V8T,CT)
 template<> class to_v8<coid::versionid> {
 public:
-    static v8::Handle<v8::Value> read(const coid::versionid& v) 
+    static v8::Handle<v8::Value> read(const coid::versionid& v)
     {
-        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); 
+        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v));
     }
 };
 
@@ -197,9 +197,9 @@ public:
 
 template<typename T> class to_v8<coid::typed_versionid<T>> {
 public:
-    static v8::Handle<v8::Value> read(const coid::typed_versionid<T>& v) 
-    { 
-        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v)); 
+    static v8::Handle<v8::Value> read(const coid::typed_versionid<T>& v)
+    {
+        return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v));
     }
 };
 
@@ -1150,24 +1150,39 @@ struct v8_streamer_context
 template<class T>
 inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 {
-    if constexpr (std::is_enum_v<T>)
+    if constexpr (requires(coid::metastream& m, const T& v) { m.stream_out(v); })
+    {
+        v8_streamer_context& streamer = THREAD_SINGLETON(v8_streamer_context);
+        streamer.meta.xstream_out(v);
+        return streamer.fmtv8.get();
+    }
+    else if constexpr (std::is_enum_v<T>)
+    {
         return v8::Int32::New(v8::Isolate::GetCurrent(), int(v));
-
-    auto& streamer = THREAD_SINGLETON(v8_streamer_context);
-    streamer.meta.xstream_out(v);
-    return streamer.fmtv8.get();
+    }
+    else
+    {
+        static_assert(coid::dependent_false_v<T>, "no metastream operator|| for T");
+    }
 }
 
 
 template<class T>
 inline bool from_v8<T>::write(v8::Handle<v8::Value> src, T& res)
 {
-    if constexpr (std::is_enum_v<T>)
-        res = T(src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust());
-    else {
-        auto& streamer = THREAD_SINGLETON(v8_streamer_context);
+    if constexpr (requires(coid::metastream m, T& v) { m.stream_in(v); })
+    {
+        v8_streamer_context& streamer = THREAD_SINGLETON(v8_streamer_context);
         streamer.fmtv8.set(src);
         streamer.meta.xstream_in(res);
+    }
+    else if constexpr (std::is_enum_v<T>)
+    {
+        res = T(src->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromJust());
+    }
+    else
+    {
+        static_assert(coid::dependent_false_v<T>, "no metastream operator|| for T");
     }
     return true;
 }

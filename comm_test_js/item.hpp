@@ -38,5 +38,27 @@ public:
 
     ifc_fn void enum_param(enumo o) {}
 
+    //ifc{
+    enum class stringo
+    {
+        jozo,
+        fero,
+
+        _count
+    };
+    //}ifc
+
+    ifc_fn stringo stringified_enum_value() { return stringo::fero; }
 };
+
+inline coid::metastream& operator||(coid::metastream& m, item::stringo& v)
+{
+    using stringo = item::stringo;
+    static stringo values[] = {stringo::jozo, stringo::fero};
+    static const char* names[] = {"jozo", "fero", nullptr};
+    static_assert(sizeof(names) / sizeof(const char*) - 1 == sizeof(values) / sizeof(stringo));  // launch_result_values and launch_result_names not synced
+    static_assert(sizeof(values) / sizeof(stringo) == static_cast<uint32>(stringo::_count)); // some of launch_result_enum values missing in launch_result_values array
+
+    return m.enum_class_type(v, values, names, stringo::jozo);
+}
 

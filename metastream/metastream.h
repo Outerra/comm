@@ -4458,37 +4458,14 @@ struct has_metastream_operator {
 
 namespace check {
 
-///non-enum types never stream through an enum operator, and the detection below must not be
-/// instantiated for them
-template <typename X, bool ISENUM = std::is_enum<X>::value>
-struct enum_helper {
-    enum { value = 0 };
-};
-
 template <typename X>
-struct enum_helper<X, true> {
-    enum {
-        value = sizeof(*(metastream*)(0) || *(X*)(0)) != sizeof(char)
-    };
-};
+concept has_enum_stream_op = std::is_enum_v<X> && requires(coid::metastream & m, X & x) {{ m || x } -> std::same_as<coid::metastream&>;};
 
-}
+} // namespace check
 
-template <typename T>
-struct has_metastream_enum_operator {
-    typedef typename std::remove_const<typename std::remove_reference<T>::type>::type X;
-
-    static constexpr bool value = check::enum_helper<X>::value != 0;
-};
-
-///Enums that have their own metastream operator are streamed through it, everything else
-/// (including plain enums) resolves the same way as resolve_enum
 template <class T>
 struct resolve_stream_enum {
-    typedef typename std::conditional<
-        has_metastream_enum_operator<T>::value,
-        typename std::remove_const<T>::type,
-        typename resolve_enum<T>::type>::type type;
+    using type = std::conditional_t<check::has_enum_stream_op<std::remove_cvref_t<T>>, std::remove_const_t<T>, typename resolve_enum<T>::type>;
 };
 
 COID_NAMESPACE_END

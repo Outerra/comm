@@ -207,6 +207,14 @@ struct resolve_enum {
 //#define ENUM_TYPE(x)  (*(coid::resolve_enum<std::remove_reference<decltype(x)>::type>::type*)(void*)&x)
 
 ////////////////////////////////////////////////////////////////////////////////
+//Helpers for constexpr-if static_assert
+template <typename T>
+struct dependent_false : std::false_type {};
+
+template <typename T>
+inline constexpr bool dependent_false_v = dependent_false<T>::value;
+
+////////////////////////////////////////////////////////////////////////////////
 
 ///Alignment trait
 template<class T>
