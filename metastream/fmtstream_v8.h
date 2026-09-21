@@ -223,9 +223,9 @@ template<> class to_v8<timet> {
 public:
     static v8::Handle<v8::Value> read(const timet& v) {
 #ifdef V8_NEW2
-        return v8::Date::New(v8::Isolate::GetCurrent()->GetCurrentContext(), double(v.t)).ToLocalChecked();
+        return v8::Date::New(v8::Isolate::GetCurrent()->GetCurrentContext(), double(v.t) * 1e3).ToLocalChecked();
 #else
-        return v8::new_object<v8::Date>(double(v.t));
+        return v8::new_object<v8::Date>(double(v.t) * 1e3);
 #endif // V8_NEW2
     }
 };
@@ -235,7 +235,7 @@ public:
     static bool write(v8::Handle<v8::Value> src, timet& res) {
         auto mv = src->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext());
         if (mv.IsJust())
-            res = timet((int64)mv.FromJust());
+            res = timet(int64(mv.FromJust() * 1e-3));
         return mv.IsJust();
     }
 };
