@@ -36,70 +36,121 @@
 #ifndef __COMM_ATOMIC_STACK_H__
 #define __COMM_ATOMIC_STACK_H__
 
-#include "atomic.h"
-#include "stack_base.h"
+#include "detail/stack_base.h"
+#include "pool.h"
 
-namespace atomic {
+#include <new>
+#include <utility>
 
+namespace coid {
 
-struct stack_node
-{
-	stack_node() : _nexts(0) {}
-
-	stack_node* volatile _nexts;
-};
-
+/// @brief Lock-free stack of values for any number of pushing and popping threads
+/// @tparam T - type of the items, stored by value; push needs it copy or move constructible, pop
+///  move assignable
+/// @note Every item lives in a node: push constructs it there, pop moves it out and destroys it,
+///  so an idle node holds no item. pop() touches the item only after its compare-and-swap took the
+///  node, when no other thread can reach it - a thread with a stale view of the stack reads only
+///  the node's next pointer.
+/// @note The nodes come from a global pool of nodes, shared by every stack of T. A popped node goes
+///  back to that pool, never to the allocator, so every node stays alive while any stack may use
+///  it - see atomic::detail::stack_base.
 template <class T>
 class stack
+    : protected atomic::detail::stack_base<atomic::detail::item_storage<T>>
 {
-private:
-	struct ptr_t
-	{
-		ptr_t() : _ptr(0), _pops(0) {}
+    using stack_t = atomic::detail::stack_base<atomic::detail::item_storage<T>>;
+    using node = typename stack_t::node;
+    using node_pool = coid::pool<node>;
 
-		ptr_t(stack_node* const ptr, const uint pops) : _ptr(ptr), _pops(pops) {}
-
-		union {
-			struct {
-		        stack_node * volatile _ptr;
-			    volatile uint _pops;
-			};
-			volatile coid::int64 _data;
-		};
-	};
-
-	ptr_t _head;
+    /// @brief The global pool of nodes for stacks of T; deletes the nodes when it is destroyed
+    static node_pool& pool() { return node_pool::global(); }
 
 public:
-	stack()	: _head() {}
+    /// @brief Creates an empty stack
+    /// @note Touches the global node pool, so that a stack owned by a singleton is destroyed before
+    ///  the pool its nodes go back to - singletons are destroyed in reverse order of creation.
+    stack() { pool(); }
 
-	void push(T * item)
-	{
-		stack_node* node=item;
+    /// @brief Destroys the items left in the stack and returns their nodes to the node pool
+    ~stack();
 
-		for (;;) {
-			node->_nexts = _head._ptr;
-			if (b_cas_ptr( reinterpret_cast<void*volatile*>(&_head._ptr),node,node->_nexts ) )
-				break;
-		}
-	}
+    /// @brief Pushes a copy of an item - lock-free, from any thread
+    /// @param item - the item to copy
+    void push(const T& item) { push_value_internal(item); }
 
-	T * pop()
-	{
-		for (;;) {
-			const ptr_t head=_head;
+    /// @brief Pushes an item, moving it into the stack - lock-free, from any thread
+    /// @param item - the item to move from
+    void push(T&& item) { push_value_internal(std::move(item)); }
 
-			if( head._ptr==0 ) return 0;
+    /// @brief Pops the most recently pushed item - lock-free, from any thread
+    /// @param item - receives the item, moved out of the stack; left untouched when the stack is empty
+    /// @return true if an item was popped, false when the stack is empty
+    /// @note If moving the item into the target throws, the item is destroyed and its node goes back
+    ///  to the pool - the item is lost, the stack stays consistent.
+    bool pop(T& item);
 
-			const ptr_t next( head._ptr->_nexts, head._pops+1 );
-
-			if( b_cas( &_head._data, next._data, head._data ) ) {
-				return static_cast<T*>(head._ptr);
-			}
-		}
-	}
+private:
+    /// @brief Constructs the item in a node from the node pool and pushes the node
+    /// @note If constructing the item throws, the node goes back to the pool and nothing is pushed.
+    template <class U>
+    void push_value_internal(U&& item);
 };
 
-} // end of namespace atomic
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+stack<T>::~stack()
+{
+    while (node* n = this->pop_internal()) {
+        n->_item.ptr()->~T();
+        pool().release_item(n);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+template <class U>
+void stack<T>::push_value_internal(U&& item)
+{
+    node* n = pool().get_or_create_item();
+
+    try {
+        new (n->_item._bytes) T(std::forward<U>(item));
+    }
+    catch (...) {
+        pool().release_item(n);
+        throw;
+    }
+
+    this->push_internal(n);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
+bool stack<T>::pop(T& item)
+{
+    node* const n = this->pop_internal();
+    if (!n)
+        return false;
+
+    // The node is out of the stack now, so this function is the only thing that still knows about
+    // it. Its item has to be destroyed and the node returned to the pool whatever happens next -
+    // also when the move assignment below throws (it is T's code). A guard does that in its
+    // destructor, which runs during stack unwinding as well; plain statements after the move would
+    // be skipped by an exception, leaving the item undestroyed and the node lost to both the stack
+    // and the pool.
+    struct release_on_exit
+    {
+        node* _node;                        // a copy: release_item() sets the pointer it is given to nullptr
+        ~release_on_exit() {
+            _node->_item.ptr()->~T();
+            pool().release_item(_node);
+        }
+    } release{ n };
+
+    item = std::move(*n->_item.ptr());
+    return true;
+}
+
+} // end of namespace coid
 
 #endif // __COMM_ATOMIC_STACK_H__

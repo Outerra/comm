@@ -18,11 +18,10 @@
  *
  * The Initial Developer of the Original Code is
  * Outerra s.r.o
- * Portions created by the Initial Developer are Copyright (C) 2023
+ * Portions created by the Initial Developer are Copyright (C) 2026
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Ladislav Hrabcak
  * Cyril Gramblicka
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -39,54 +38,113 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "stack_base.h"
+#include "detail/stack_base.h"
 
 namespace coid
 {
+
+/// @brief Lock-free pool of objects for any number of threads
+/// @tparam T - type of the pooled objects; the pool holds T* and takes any object created with new
+/// @note Two stacks of nodes: one holding the idle objects, one holding nodes without an object.
+///  Taking an object moves its node to the free nodes, releasing one takes a free node (or a new
+///  one) for it. Nodes are deleted only by the pool's destructor, so a thread reading a node
+///  another thread has just taken reads valid memory - see atomic::detail::stack_base.
+/// @note The destructor deletes the objects in the pool and the nodes; objects taken out of the
+///  pool are the caller's.
 template<class T>
 class pool
-    : protected atomic::stack_base<T>
 {
-    using stack_t = atomic::stack_base<T>;
+    using stack_t = atomic::detail::stack_base<T*>;
+    using node = typename stack_t::node;
 
 public:
-    pool()
-        : atomic::stack_base<T>()
-    {}
+    pool() = default;
 
-    /// return global pool for type T
+    pool(const pool&) = delete;
+    pool& operator=(const pool&) = delete;
+
+    /// @brief Deletes the objects in the pool and the pool's nodes
+    ~pool();
+
+    /// @brief The global pool of T
     static pool& global() { return SINGLETON(pool<T>); }
 
-    /// @brief Get item from pool
-    /// @return item from pool or nullptr
-    T* get_item() {
-        return stack_t::pop();
-    }
+    /// @brief Takes an object from the pool - lock-free, from any thread
+    /// @return the most recently released object, nullptr when the pool is empty
+    T* get_item();
 
-    /// @brief Create instance or take one from pool
-    T* create_item() {
-        T* inst = stack_t::pop();
-        if (!inst)
-            inst = new T;
-        return inst;
-    }
+    /// @brief Takes an object from the pool, or creates one with new when the pool is empty
+    /// @return the object; a pooled one keeps the member values it was released with
+    T* get_or_create_item();
 
-    /// return instance to pool
-    void release_item(T*& o) {
-        // create trait for reset !!!
-        stack_t::push(o);
-        o = 0;
-    }
-    /// @brief  Reset the pool and delete all of its content
-    void reset()
-    {
-        T* object_ptr = stack_t::pop();
-        while (object_ptr != nullptr) 
-        {
-            delete object_ptr;
-            object_ptr = stack_t::pop();
-        }
-    }
+    /// @brief Puts an object into the pool - lock-free, from any thread
+    /// @param o - the object, owned by the pool from now on; set to nullptr
+    void release_item(T*& o);
+
+    /// @brief Deletes the objects in the pool - not while other threads use it
+    void reset();
+
+private:
+    stack_t _filled;                        ///< nodes holding an idle object
+    stack_t _free;                          ///< nodes without an object, for the next release_item
 };
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+pool<T>::~pool()
+{
+    while (node* n = _filled.pop_internal())
+    {
+        delete n->_item;
+        delete n;
+    }
+
+    while (node* n = _free.pop_internal())
+    {
+        delete n;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+T* pool<T>::get_item()
+{
+    node* const n = _filled.pop_internal();
+    if (!n)
+        return nullptr;
+
+    T* const item = n->_item;
+    _free.push_internal(n);
+    return item;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+T* pool<T>::get_or_create_item()
+{
+    T* const item = get_item();
+    return item ? item : new T;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+void pool<T>::release_item(T*& o)
+{
+    node* n = _free.pop_internal();
+    if (!n)
+        n = new node;
+
+    n->_item = o;
+    _filled.push_internal(n);
+    o = nullptr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<class T>
+void pool<T>::reset()
+{
+    while (T* item = get_item())
+        delete item;
+}
 
 }; // end of namespace coid

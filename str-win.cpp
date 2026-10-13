@@ -75,7 +75,7 @@ COID_NAMESPACE_END
 
 #include "str.h"
 #include "pthreadx.h"
-#include "atomic/stack_base.h"
+#include "atomic/stack.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -104,11 +104,18 @@ COID_NAMESPACE_BEGIN
 
 struct zstring::zpool
 {
-    atomic::stack_base<charstr> _pool;
+    coid::stack<charstr*> _pool;
     uints _maxsize;
 
     zpool() : _maxsize(SIZE_MAX)
     {}
+
+    /// @brief Deletes the strings left in the pool
+    ~zpool() {
+        charstr* str = nullptr;
+        while (_pool.pop(str))
+            delete str;
+    }
 
     void free(charstr* str) {
         //keep only strings under the max size
@@ -119,8 +126,8 @@ struct zstring::zpool
     }
 
     charstr* alloc() {
-        charstr* str = _pool.pop();
-        if (!str)
+        charstr* str = nullptr;
+        if (!_pool.pop(str))
             str = new charstr;
         return str;
     }

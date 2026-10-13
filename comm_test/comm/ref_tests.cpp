@@ -1181,7 +1181,7 @@ void ref_shared_tests()
     {
         reset();
         bar_pool pool;
-        ref<foo> instance(pool.create_item(), &pool);
+        ref<foo> instance(pool.get_or_create_item(), &pool);
         RASSERT(instance.is_set());
         RASSERT(instance.get_strong_refcount() == 1);
         RASSERT(instance->_foo_member.cmpeq(bar::name));
@@ -2921,7 +2921,7 @@ void ref_intrusive_tests()
     // way back to the pool - the policy is pooled too and will be handed to a different object
     {
         reset();
-        ibar* first_ptr = ibar_pool::global().create_item();
+        ibar* first_ptr = ibar_pool::global().get_or_create_item();
         {
             iref<ibar> instance;
             instance.create(first_ptr);
@@ -3060,7 +3060,7 @@ void ref_intrusive_tests()
     // the count follows the refs, and can still be asked of the object after the last one is gone
     {
         reset();
-        ifoo* object_ptr = ifoo_pool::global().create_item();
+        ifoo* object_ptr = ifoo_pool::global().get_or_create_item();
         {
             iref<ifoo> first;
             first.create<coid::ref_policy_pooled<ifoo>>(object_ptr, &ifoo_pool::global());
@@ -3079,7 +3079,7 @@ void ref_intrusive_tests()
         // directly - a count of zero would also be reported by an object still pointing at a
         // policy that is merely sitting free in its pool, which is the 1.6 defect
         RASSERT(ifoo::destructor_called == false);
-        ifoo* recycled_ptr = ifoo_pool::global().create_item();
+        ifoo* recycled_ptr = ifoo_pool::global().get_or_create_item();
         RASSERT(recycled_ptr == object_ptr);
         RASSERT(recycled_ptr->has_policy() == false);
         RASSERT(recycled_ptr->get_strong_refcount() == 0);
@@ -3316,6 +3316,59 @@ void ref_multiple_inheritance_tests()
 /// function shrinks back to empty.
 void ref_tests_to_review()
 {
+    // a pooled intrusive object that already has a policy can be adopted by pointer: the
+    // constructor, the assignment and create(ptr) only join its count - the iref<T>(this) case
+    {
+        reset();
+        iref<ibar> owner;
+        owner.create();
+        ibar* object_ptr = owner.get();
+
+        iref<ibar> joined(object_ptr);
+        RASSERT(joined.get() == object_ptr);
+        RASSERT(owner.get_strong_refcount() == 2);
+
+        iref<ibar> assigned;
+        assigned = object_ptr;
+        RASSERT(owner.get_strong_refcount() == 3);
+
+        iref<ibar> created;
+        created.create(object_ptr);
+        RASSERT(owner.get_strong_refcount() == 4);
+
+        joined.release();
+        assigned.release();
+        created.release();
+        RASSERT(owner.get_strong_refcount() == 1);
+        owner.release();
+        RASSERT(ibar::destructor_called == false);          // recycled, not deleted
+        ibar* ptr = ibar_pool::global().get_item();
+        RASSERT(ptr == object_ptr);
+        RASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
+
+    // downcast() of a pooled intrusive type joins the existing count
+    {
+        reset();
+        iref<ifoo> base;
+        base.create<ibar>();
+        iref<ibar> derived = base.downcast<ibar>();
+        RASSERT(derived.get() == base.get<ibar>());
+        RASSERT(base.get_strong_refcount() == 2);
+
+        iref<ifoo> empty;
+        RASSERT(empty.downcast<ibar>().is_empty());
+
+        derived.release();
+        RASSERT(base.get_strong_refcount() == 1);
+        base.release();
+        RASSERT(ibar::destructor_called == false);          // recycled, not deleted
+        ibar* ptr = ibar_pool::global().get_item();
+        RASSERT(ptr != nullptr);
+        RASSERT(ibar_pool::global().get_item() == nullptr);
+        delete ptr;
+    }
 }
 
 void ref_tests()

@@ -188,8 +188,8 @@ public:
 
     static logger_message_ref_policy* create()
     {
-        logger_message_ref_policy* p = policy_pool_singleton().create_item();   
-        p->_original_ptr = logmsg_pool_singleton().create_item();
+        logger_message_ref_policy* p = policy_pool_singleton().get_or_create_item();   
+        p->_original_ptr = logmsg_pool_singleton().get_or_create_item();
         p->_original_ptr->reset();
 
         return p;

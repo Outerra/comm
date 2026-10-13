@@ -86,7 +86,7 @@ public: // methods only
     /// @note The pool must outlive the object.
     static ref_policy_pooled<Type>* create(coid::pool<Type>* type_pool_ptr)
     {
-        Type* object_ptr = type_pool_ptr->create_item();
+        Type* object_ptr = type_pool_ptr->get_or_create_item();
         return create(object_ptr, type_pool_ptr);
     }
 
@@ -97,7 +97,7 @@ public: // methods only
     /// @note The pool must outlive the object.
     static ref_policy_pooled<Type>* create(Type* object_ptr, coid::pool<Type>* type_pool_ptr)
     {
-        ref_policy_pooled<Type>* result_ptr = policy_pool_type::global().create_item();
+        ref_policy_pooled<Type>* result_ptr = policy_pool_type::global().get_or_create_item();
         result_ptr->_type_pool_ptr = type_pool_ptr;
         result_ptr->_original_ptr = object_ptr;
         return result_ptr;

@@ -16,7 +16,7 @@ coid::stacktrace coid::stacktrace::get_current_stack_trace()
     stack_frame* previous_frame = nullptr;
     for (WORD i = 0; i < frame_count; i++)
     {
-        stack_frame* new_frame = pool<stack_frame>::global().create_item();
+        stack_frame* new_frame = pool<stack_frame>::global().get_or_create_item();
         new_frame->reset();
 
         new_frame->_frame_address = backtrace[i];

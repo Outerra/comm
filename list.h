@@ -2,7 +2,7 @@
 #ifndef __COID_LIST_H__
 #define __COID_LIST_H__
 
-#include "atomic/basic_pool.h"
+#include "atomic/pool.h"
 #include "alloc/commalloc.h"
 
 #include <iterator>
@@ -21,10 +21,7 @@ public:
     {
         COIDNEWDELETE(node);
 
-        union {
-            node* _next_basic_pool;
-            node* _next = 0;
-        };
+        node* _next = 0;
         node* _prev = 0;
         union
         {
@@ -150,7 +147,7 @@ public:
 
 protected:
     ///
-    atomic::basic_pool<node> _npool;
+    coid::pool<node> _npool;
 
     ///
     node _head;
@@ -161,7 +158,7 @@ protected:
 
     node* new_node(node* itpos, const T& item)
     {
-        node* nn = _npool.pop_new();
+        node* nn = _npool.get_or_create_item();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -172,7 +169,7 @@ protected:
 
     node* new_node(node* itpos, T&& item)
     {
-        node* nn = _npool.pop_new();
+        node* nn = _npool.get_or_create_item();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -185,7 +182,7 @@ protected:
     void delete_node(node* n)
     {
         n->item().~T();
-        _npool.push(n);
+        _npool.release_item(n);
     }
 
     ///
@@ -205,7 +202,7 @@ protected:
     ///
     T* insert_uninit(node* itpos)
     {
-        node* nn = _npool.pop_new();
+        node* nn = _npool.get_or_create_item();
 
         nn->_next = itpos;
         nn->_prev = itpos->_prev;
@@ -230,8 +227,8 @@ public:
     ///
     list() : _npool(), _head(false) {}
 
-    ///
-    ~list() {}
+    /// @brief Destroys the items left in the list; the node pool deletes the nodes
+    ~list() { clear(); }
 
     ///
     void push_front(const T& item) { insert(_head._next, item); }
@@ -341,9 +338,10 @@ public:
     {
         node* n = _head._next;
         _head._next = _head._prev = &_head;
-        while (n->_next != &_head) {
-            n = n->_next;
-            delete_node(n->_prev);
+        while (n != &_head) {
+            node* const next = n->_next;
+            delete_node(n);
+            n = next;
         }
     }
 

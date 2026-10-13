@@ -463,7 +463,10 @@ public: // methods only
     COID_REQUIRES((is_static_castable<Type*, DerivedType*>))
     ref_intrusive<DerivedType> downcast() const
     {
-        ref_intrusive<DerivedType> result(static_cast<DerivedType*>(_object_ptr));
+        // joins the count directly - the object has a policy whenever this ref is set, so the
+        // adopting constructor, which may have to create one, is not needed
+        ref_intrusive<DerivedType> result;
+        result._object_ptr = static_cast<DerivedType*>(add_refcount_and_fetch_ptr_internal());
         return result;
     }
 
