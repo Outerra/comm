@@ -391,9 +391,12 @@
     <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\binstring.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\directory.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\atomic_stack_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\bitfield.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\job.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\malloc.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\memtrack_tests.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\mpsc_queue_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta2.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\meta3.cpp" />

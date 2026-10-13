@@ -425,13 +425,13 @@
     <ClInclude Include="..\..\..\alloc\slotalloc_bmp.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h" />
     <ClInclude Include="..\..\..\atomic\atomic.h" />
-    <ClInclude Include="..\..\..\atomic\basic_pool.h" />
     <ClInclude Include="..\..\..\atomic\pool.h" />
     <ClInclude Include="..\..\..\atomic\pool_base.h" />
     <ClInclude Include="..\..\..\atomic\queue.h" />
     <ClInclude Include="..\..\..\atomic\queue_base.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
-    <ClInclude Include="..\..\..\atomic\stack_base.h" />
+    <ClInclude Include="..\..\..\atomic\mpsc_queue.h" />
+    <ClInclude Include="..\..\..\atomic\detail\stack_base.h" />
     <ClInclude Include="..\..\..\binstream\binstream.h" />
     <ClInclude Include="..\..\..\binstream\binstreambuf.h" />
     <ClInclude Include="..\..\..\binstream\binstreamsegbuf.h" />

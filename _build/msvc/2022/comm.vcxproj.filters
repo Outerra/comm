@@ -314,6 +314,8 @@
     <ClInclude Include="..\..\..\rnd.h" />
     <ClInclude Include="..\..\..\singleton.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
+    <ClInclude Include="..\..\..\atomic\mpsc_queue.h" />
+    <ClInclude Include="..\..\..\atomic\detail\stack_base.h" />
     <ClInclude Include="..\..\..\str.h" />
     <ClInclude Include="..\..\..\strgen.h" />
     <ClInclude Include="..\..\..\substring.h" />

@@ -335,11 +335,17 @@ struct slot : storage<L, Es...>
 void data_client_test();
 void binstring_test();
 void ref_tests();
+void atomic_stack_tests();
+void memtrack_tests();
+void mpsc_queue_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
     ref_tests();
+    atomic_stack_tests();
+    memtrack_tests();
+    mpsc_queue_tests();
     run_directory_tests();
     run_token_tests();
     run_uid_tests();
