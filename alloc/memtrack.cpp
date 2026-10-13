@@ -118,7 +118,11 @@ memtrack_hash_t;
 ///
 struct memtrack_registrar
 {
-    inline static bool inside_alloc_in_progress = false;
+    /// @brief Set while this thread is inside alloc(), whose own allocations (the hash map, the stack
+    ///  trace records) must not be tracked
+    /// @note Per thread: it guards against recursion, and a shared flag would make a concurrent
+    ///  allocation on another thread look like one and go uncounted.
+    inline static thread_local bool inside_alloc_in_progress = false;
 
     volatile bool running = false;
 
@@ -336,7 +340,9 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 static memtrack_registrar* memtrack_register()
 {
-    static bool reentry = false;
+    // per thread: it stops the recursion while this thread creates the registrar, and a shared flag
+    // would make concurrent callers on other threads get no registrar and go untracked
+    static thread_local bool reentry = false;
     if (reentry)
         return 0;
 
