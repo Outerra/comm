@@ -106,6 +106,12 @@ public: // methods only
     template <class Pred>
     bool pop_if(Pred&& pred, T& item);
 
+    /// @brief Whether the queue holds no item - from any thread, a snapshot
+    /// @return true when every item pushed so far has been popped
+    /// @note Reads the two counters only, so a thread that waits for the queue to drain does not
+    ///  become a consumer. An item counts from the start of its push until a pop takes it out.
+    bool is_empty() const;
+
 protected: // inner definitions only
     /// @brief Holds the consumer mutex for one pop; a second consumer is reported and then waits
     struct consumer_lock_internal
@@ -131,6 +137,17 @@ protected: // methods only
     /// @brief Takes the pushed nodes as the consumer's list, oldest first - only when that list is empty
     void take_pushed_internal();
 protected: // members only
+    // The number of items is kept as two counters that only grow, not as one that goes up and
+    // down. One shared counter would cost every pop a locked read-modify-write on a cache line all
+    // the producers write to - and the consumer's pops are otherwise free of atomic operations.
+    // _pushed is incremented by the producers, right after the head their compare-and-swap already
+    // holds; _popped is written by the consumer alone, so a plain store does, and it sits a cache
+    // line away from both. is_empty() compares them, which is safe from any thread.
+    std::atomic<uint64> _pushed = { 0 };                        ///< items pushed so far - producers, before they publish the item
+    char _counter_padding[64 - sizeof(_pushed)];                ///< keeps _popped off the producers' cache line
+    
+    std::atomic<uint64> _popped = { 0 };                        ///< items popped so far - the consumer only, as each item is unlinked
+
     comm_mutex _consumer_mutex;             ///< held by pop() and pop_if()
     node* _consumer_list_head = nullptr;    ///< the consumer's list, oldest first - only under _consumer_mutex
 };
@@ -180,6 +197,8 @@ void mpsc_queue<T>::push_value_internal(U&& item)
         throw;
     }
 
+    // counted before it is published, so it is never popped before it is counted
+    _pushed.fetch_add(1, std::memory_order_relaxed);
     this->push_internal(n);
 }
 
@@ -213,6 +232,17 @@ bool mpsc_queue<T>::pop_if(Pred&& pred, T& item)
 
 ////////////////////////////////////////////////////////////////////////////////
 template <class T>
+bool mpsc_queue<T>::is_empty() const
+{
+    // _popped first: both counters only grow and an item is counted as pushed before it can be
+    // popped, so equal values mean every item pushed before _pushed was read had been popped
+    const uint64 popped = _popped.load(std::memory_order_acquire);
+    const uint64 pushed = _pushed.load(std::memory_order_acquire);
+    return pushed == popped;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template <class T>
 typename mpsc_queue<T>::node* mpsc_queue<T>::front_internal()
 {
     if (!_consumer_list_head)
@@ -227,6 +257,9 @@ void mpsc_queue<T>::pop_front_internal(T& item)
 {
     node* const n = _consumer_list_head;
     _consumer_list_head = n->_next.load(std::memory_order_relaxed);
+
+    // out of the queue now, also if the move below throws; the consumer is the only writer
+    _popped.store(_popped.load(std::memory_order_relaxed) + 1, std::memory_order_release);
 
     // The node is unlinked now, so this function is the only thing that still knows about it. Its
     // item has to be destroyed and the node returned to the pool whatever happens next - also when

@@ -79,6 +79,57 @@ void mpsc_queue_tests()
         RASSERT(v == 7);
     }
 
+    // is_empty follows the pushes and pops, also for items pushed after the consumer's last take
+    {
+        coid::mpsc_queue<int> q;
+        RASSERT(q.is_empty());
+        q.push(1);
+        RASSERT(!q.is_empty());                     // takes 1 into the consumer's list
+        q.push(2);                                  // in the shared list
+        int v = -1;
+        RASSERT(q.pop(v) && v == 1);
+        RASSERT(!q.is_empty());                     // 2 is found in the shared list
+        RASSERT(q.pop(v) && v == 2);
+        RASSERT(q.is_empty());
+    }
+
+    // is_empty from a thread that is not the consumer, while the consumer pops: never true while
+    // items are still queued, and asking does not make the asking thread a consumer
+    {
+        coid::mpsc_queue<int> q;
+        constexpr int count = 20000;
+        constexpr int consumed = 15000;
+        for (int i = 0; i < count; ++i) {
+            q.push(i);
+        }
+
+        std::atomic<bool> done = false;
+        std::thread consumer([&q, &done] {
+            int v;
+            for (int i = 0; i < consumed; ++i) {
+                q.pop(v);
+            }
+            done.store(true, std::memory_order_release);
+        });
+
+        unsigned reported_empty = 0;
+        while (!done.load(std::memory_order_acquire)) {
+            if (q.is_empty()) {
+                ++reported_empty;
+            }
+        }
+        consumer.join();
+
+        RASSERT(reported_empty == 0);
+        RASSERT(!q.is_empty());
+        int v = -1, left = 0;
+        while (q.pop(v)) {
+            ++left;
+        }
+        RASSERT(left == count - consumed);
+        RASSERT(q.is_empty());
+    }
+
     // first in, first out
     {
         coid::mpsc_queue<int> q;
