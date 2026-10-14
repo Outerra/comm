@@ -36,7 +36,7 @@
 #ifndef __COMM_LOGWRITTER_H__
 #define __COMM_LOGWRITTER_H__
 
-#include "../sync/queue.h"
+#include "../atomic/mpsc_queue.h"
 #include "logger.h"
 //#include "../pthreadx.h"
 
@@ -46,7 +46,7 @@ class log_writer
 {
 protected:
     coid::thread _thread;
-    coid::queue<logmsg_ref> _queue;
+    coid::mpsc_queue<logmsg_ref> _queue;    ///< messages to write - any thread pushes, the writer thread consumes
 
     bool log_stderr();
 
@@ -61,14 +61,18 @@ public:
 
     void* thread_run();
 
+    /// @brief Queues a message for the writer thread - lock-free, from any thread
     void addmsg(logmsg_ref&& m) {
         _queue.push(m.move());
     }
 
+    /// @brief Writes the queued messages - the writer thread only, it is the queue's consumer
     void flush();
 
     void terminate();
 
+    /// @brief Whether the writer thread has taken every queued message - from any thread, a snapshot
+    /// @note The last message taken may still be being written.
     bool is_empty() const { return _queue.is_empty(); }
     bool is_running() const { return _thread.exists(); }
 };

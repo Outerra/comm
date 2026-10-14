@@ -338,6 +338,7 @@ void ref_tests();
 void atomic_stack_tests();
 void memtrack_tests();
 void mpsc_queue_tests();
+void logger_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
@@ -346,6 +347,7 @@ int main( int argc, char* argv[] )
     atomic_stack_tests();
     memtrack_tests();
     mpsc_queue_tests();
+    logger_tests();
     run_directory_tests();
     run_token_tests();
     run_uid_tests();
