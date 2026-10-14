@@ -909,7 +909,7 @@ struct token
     };
 
     /// @{ Most used traits
-    
+
     ///Keep the separator with the source string, return the whole string if no separator found
     [[deprecated("Use cut_trait_keep_sep_with_source_default_full()")]] static constexpr cut_trait cut_trait_keep_sep_default_full() {
         return cut_trait(fKEEP_SEPARATOR);
@@ -929,7 +929,7 @@ struct token
     [[deprecated("Use cut_trait_keep_sep_with_returned_default_empty")]] static constexpr cut_trait cut_trait_return_with_sep_default_empty() {
         return cut_trait(fRETURN_SEPARATOR | fON_FAIL_RETURN_EMPTY);
     }
-     
+
     ///Keep the separator with the source string, return the whole string if no separator found
     static constexpr cut_trait cut_trait_keep_sep_with_source_default_full() {
         return cut_trait(fKEEP_SEPARATOR);
@@ -1021,14 +1021,14 @@ struct token
 
     ///Cut sep-character separated arguments. Handles strings enclosed in '' or ""
     /// @param sep separator char to look for
-    /// @param end terminator char to stop at
+    /// @param end terminator char to stop at (not consumed)
     /// @note consumes the separator but not the end character
     token cut_left_argument(char sep = ' ', char end = 0)
     {
         //skip whitespace except the separator char
         while (_ptr < _pte) {
             char c = *_ptr;
-            if (c == sep || (c != ' '  &&  c != '\t' && c != '\r' && c != '\n'))
+            if (c == sep || c == end || (c != ' '  &&  c != '\t' && c != '\r' && c != '\n'))
                 break;
             ++_ptr;
         }
