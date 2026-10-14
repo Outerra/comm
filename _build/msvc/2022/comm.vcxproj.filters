@@ -314,6 +314,45 @@
     <ClInclude Include="..\..\..\rnd.h" />
     <ClInclude Include="..\..\..\singleton.h" />
     <ClInclude Include="..\..\..\atomic\stack.h" />
+    <ClInclude Include="..\..\..\containers\dynarray.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\list.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\range.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\slotalloc.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\slothash.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_map.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_set.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_keyset.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\roundbuffer.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\pool.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\stack.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\mpsc_queue.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\queue.h">
+      <Filter>containers</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\atomic\mpsc_queue.h" />
     <ClInclude Include="..\..\..\atomic\detail\stack_base.h" />
     <ClInclude Include="..\..\..\str.h" />

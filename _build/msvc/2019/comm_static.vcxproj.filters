@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="containers">
+      <UniqueIdentifier>{9d30cc14-afb9-4a62-867d-b551ff63e3f7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="atomic">
       <UniqueIdentifier>{3fe51a65-64f2-4c21-a937-c3cb45f3824a}</UniqueIdentifier>
     </Filter>
@@ -59,6 +62,45 @@
     </ClInclude>
     <ClInclude Include="..\..\..\atomic\stack.h">
       <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\dynarray.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\list.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\range.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\slotalloc.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\slothash.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_map.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_set.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\hash_keyset.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\roundbuffer.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\pool.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\stack.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\mpsc_queue.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\containers\queue.h">
+      <Filter>containers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\atomic\mpsc_queue.h">
       <Filter>atomic</Filter>

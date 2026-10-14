@@ -4,6 +4,9 @@
     <Filter Include="alloc">
       <UniqueIdentifier>{ca06dbf8-bfb4-46fd-82fa-3a059061d5f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="containers">
+      <UniqueIdentifier>{13295f64-1427-4ce0-b02a-9ed16a952472}</UniqueIdentifier>
+    </Filter>
     <Filter Include="atomic">
       <UniqueIdentifier>{7f2788e9-2346-420b-ae1a-6cc3031c3f7e}</UniqueIdentifier>
     </Filter>
@@ -144,6 +147,45 @@
     </ClInclude>
     <ClInclude Include="atomic\stack.h">
       <Filter>atomic</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\dynarray.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\list.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\range.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\slotalloc.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\slothash.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\hash_map.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\hash_set.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\hash_keyset.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\roundbuffer.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\pool.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\stack.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\mpsc_queue.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="containers\queue.h">
+      <Filter>containers</Filter>
     </ClInclude>
     <ClInclude Include="atomic\mpsc_queue.h">
       <Filter>atomic</Filter>
