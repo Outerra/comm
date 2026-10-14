@@ -32,8 +32,8 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __COMM_ATOMIC_QUEUE_H__
-#define __COMM_ATOMIC_QUEUE_H__
+#ifndef __COMM_SYNC_QUEUE_H__
+#define __COMM_SYNC_QUEUE_H__
 
 #include "../namespace.h"
 #include "../list.h"
@@ -80,4 +80,4 @@ public:
 
 COID_NAMESPACE_END
 
-#endif // __COMM_ATOMIC_QUEUE_H__
+#endif // __COMM_SYNC_QUEUE_H__
