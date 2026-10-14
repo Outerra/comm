@@ -6,6 +6,11 @@
 
 namespace coid
 {
+    /// @brief Ring of the most recently pushed items: once it is full, a push overwrites the oldest one
+    /// @tparam T - type of the items
+    /// @tparam min_size - number of items it holds at least
+    /// @note The items are the slots after _tail up to _head; the slot at _tail always stays empty,
+    ///  so the storage is the power of two above min_size.
     template <typename T, uints min_size>
     class circular_queue
     {
@@ -33,7 +38,8 @@ namespace coid
 
         bool is_empty() const { return _head == _tail; }
 
-        uints sizes() const { return _head >= _tail ? _head - _tail : _size; }
+        /// @brief Number of items held, at most _size - 1
+        uints sizes() const { return (_head - _tail) & _size_mask; }
         uint32 size() const { return coid::down_cast<uint32>(sizes()); }
 
 
@@ -42,7 +48,8 @@ namespace coid
         template<typename Func>
         void for_each(Func fn, iterator_direction dir = iterator_direction::forward) const
         {
-            uints idx = dir == iterator_direction::forward ? _tail : _head;
+            // forward starts at the oldest item, the slot after the empty one at _tail
+            uints idx = dir == iterator_direction::forward ? (_tail + 1) & _size_mask : _head;
             ints inc = dir == iterator_direction::forward ? 1 : -1;
 
             const uints size = sizes();
@@ -59,7 +66,8 @@ namespace coid
     protected: // members only
         
     protected: // members only
-        static constexpr uints _size = constexpr_nearest_high_pow2(min_size);
+        // one more than min_size: the slot at _tail is never an item
+        static constexpr uints _size = constexpr_nearest_high_pow2(min_size + 1);
         static constexpr uints _size_mask = _size - 1;
 
         dynarray32<T> _items;

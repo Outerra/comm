@@ -340,6 +340,7 @@ void memtrack_tests();
 void mpsc_queue_tests();
 void logger_tests();
 void roundbuffer_tests();
+void circular_queue_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
@@ -350,6 +351,7 @@ int main( int argc, char* argv[] )
     mpsc_queue_tests();
     logger_tests();
     roundbuffer_tests();
+    circular_queue_tests();
     run_directory_tests();
     run_token_tests();
     run_uid_tests();

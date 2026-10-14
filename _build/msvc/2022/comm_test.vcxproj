@@ -390,6 +390,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\comm_test\binstream.cpp" />
     <ClCompile Include="..\..\..\comm_test\binstring.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\circular_queue_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\directory.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\atomic_stack_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\bitfield.cpp" />
