@@ -22,6 +22,11 @@
     (item_id_type - with versioning the versionid).
     An assignment destroys the items it replaces.
 
+    And the item creation and deletion by id: create gives a new item in a free slot or past the created ones (nullptr
+    for an occupied slot), constructed with its ext values; in the pool mode the slot's item - a new one, or a
+    constructed one as it is; create_uninit leaves a new slot to the caller. del_item and undel_item take the item's id
+    (without versioning the slot), push copies or moves the object in, add_new skips the free slots.
+
     Like ref_tests, these assert with RASSERT, which is live in every configuration.
 */
 
@@ -75,6 +80,20 @@ struct counted_ext
     counted_ext(const counted_ext&) { ++alive; }
     counted_ext& operator=(const counted_ext&) = default;
     ~counted_ext() { --alive; }
+};
+
+/// @brief An item that records being moved from - for push(T&&)
+struct movable_item
+{
+    int _value = 0;
+    bool _moved_from = false;
+
+    movable_item() = default;
+    explicit movable_item(int value) : _value(value) {}
+    movable_item(const movable_item& other) : _value(other._value) {}
+    movable_item(movable_item&& other) noexcept : _value(other._value) { other._moved_from = true; }
+    movable_item& operator=(const movable_item& other) { _value = other._value; return *this; }
+    movable_item& operator=(movable_item&& other) noexcept { _value = other._value; other._moved_from = true; return *this; }
 };
 
 using versioned_items = coid::slotalloc_versioning<versioned_item>;
@@ -779,23 +798,6 @@ void add_ids()
     RASSERT(full_id == pool.get_item_versionid(full) && full_id.id32() == 3 && pool.count() == 4);
 }
 
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-// tests to review
-
-/// @brief An item that records being moved from - for push(T&&)
-struct movable_item
-{
-    int _value = 0;
-    bool _moved_from = false;
-
-    movable_item() = default;
-    explicit movable_item(int value) : _value(value) {}
-    movable_item(const movable_item& other) : _value(other._value) {}
-    movable_item(movable_item&& other) noexcept : _value(other._value) { other._moved_from = true; }
-    movable_item& operator=(const movable_item& other) { _value = other._value; return *this; }
-    movable_item& operator=(movable_item&& other) noexcept { _value = other._value; other._moved_from = true; return *this; }
-};
-
 /// @brief create and create_uninit without the pool mode: a new item in a free slot or past the created ones, nullptr for
 /// an occupied slot; create constructs the item and its ext values, create_uninit neither
 void create_without_pool()
@@ -926,17 +928,6 @@ void add_new_skips_free_slots()
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-void slotalloc_tests_to_review()
-{
-    create_without_pool();
-    create_in_pool();
-    del_and_undel_by_slot_id();
-    push_copies_and_moves();
-    add_new_skips_free_slots();
-}
-
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 void slotalloc_tests()
 {
     reused_slot_gets_another_version();
@@ -954,5 +945,9 @@ void slotalloc_tests()
     assignment_replaces_the_items();
     uninit_ids();
     add_ids();
-    slotalloc_tests_to_review();
+    create_without_pool();
+    create_in_pool();
+    del_and_undel_by_slot_id();
+    push_copies_and_moves();
+    add_new_skips_free_slots();
 }
