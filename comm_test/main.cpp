@@ -113,8 +113,8 @@ void lambda_test()
 void lambda_slotalloc_test()
 {
     slotalloc_tracking<value> data;
-    data.push_construct("abc");
-    data.push_construct("def");
+    data.push(value(charstr("abc")));
+    data.push(value(charstr("def")));
 
     value* p1 = data.find_if([](const value& v) {
         return v.key == "abc";
@@ -341,6 +341,7 @@ void mpsc_queue_tests();
 void logger_tests();
 void roundbuffer_tests();
 void circular_queue_tests();
+void slotalloc_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
@@ -352,6 +353,7 @@ int main( int argc, char* argv[] )
     logger_tests();
     roundbuffer_tests();
     circular_queue_tests();
+    slotalloc_tests();
     run_directory_tests();
     run_token_tests();
     run_uid_tests();
@@ -394,8 +396,8 @@ int main( int argc, char* argv[] )
         slotalloc_pool<charstr> sp;
 
         for (int i = 0; i < 256 + 1; ++i) {
-            ss.push_construct("abc");
-            sp.push_construct("def");
+            ss.push(charstr("abc"));
+            sp.push(charstr("def"));
         }
 
         sp.del_item(0);

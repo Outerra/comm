@@ -106,7 +106,6 @@ public:
 
     T* add() = delete;
     T* add_uninit(bool*, uints*) = delete;
-    T* get_or_create(uints, bool*) = delete;
 
     slothash(uint reserve_items = 64)
     {
@@ -205,14 +204,14 @@ public:
     T* push_construct(Ps&&... ps) {
         uints id;
         bool isnew;
-        T* p = base::add_uninit(&isnew, &id);
+        T* p = base::add_uninit_internal(&isnew, &id);
 
         base::construct_object(p, !isnew, std::forward<Ps>(ps)...);
 
         //if this fails, multikey is off and same key item exists
         T* r = insert_value_(p, down_cast<uint>(id));
         if (!r)
-            base::del_item(id);
+            base::del_item_by_slot_internal(id);
 
         return r;
     }
@@ -224,7 +223,7 @@ public:
     T* push_construct_in_slot(uint id, Ps&&... ps)
     {
         bool isnew;
-        T* p = base::get_or_create_uninit(id, &isnew);
+        T* p = base::get_or_create_uninit_internal(id, &isnew);
 
         if (!isnew)
             //destroy old hash links
@@ -304,7 +303,7 @@ public:
             uint id = *n;
             *n = seqtable()[id];
 
-            base::del_item(id);
+            base::del_item_by_slot_internal(id);
             ++c;
         }
 
@@ -429,8 +428,12 @@ protected:
                 fid = find_object_entry(b, key);
             }
 
+            //the callers construct the new key's item - a reused pooled one is destroyed first
             uints ids;
-            base::add_uninit(0, &ids);
+            bool slot_is_new;
+            T* p = base::add_uninit_internal(&slot_is_new, &ids);
+            if (!slot_is_new)
+                p->~T();
 
             seqtable()[ids] = *fid;
             *fid = uint(ids);
@@ -484,7 +487,7 @@ protected:
             return 0;
 
         uints id;
-        T* p = base::add_uninit(isnew, &id);
+        T* p = base::add_uninit_internal(isnew, &id);
 
         seqtable()[id] = *fid;
         *fid = uint(id);

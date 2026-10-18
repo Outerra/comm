@@ -107,6 +107,9 @@ protected:
 
 public:
 
+    ///The id of an item - its versionid with versioning, else its slot
+    using item_id_type = std::conditional_t<VERSIONING, versionid, uints>;
+
     ///Construct slotalloc container
     /// @note it's required to reserve memory or virtual address space, and/or to call allow_rebase() to indicate that it's ok when item addresses change on resize
     slotalloc_base()
@@ -124,9 +127,6 @@ public:
     }
 
     ~slotalloc_base() {
-        if coid_constexpr_if(!POOL)
-            reset();
-
         discard();
     }
 
@@ -136,7 +136,12 @@ public:
 
     slotalloc_base& operator=(const slotalloc_base& s)
     {
-        copy(s);
+        //the items here go first - copy fills an empty container
+        if (this != &s) {
+            discard();
+            copy(s);
+        }
+
         return *this;
     }
 
@@ -150,12 +155,17 @@ public:
         return *this;
     }
 
+    ///Copies the items: in the pool mode all created slots (the free pooled items too - undel_item works in the copy), else
+    /// the allocated ones
     void copy(const slotalloc_base& o)
     {
         _allocated = o._allocated;
 
         if coid_constexpr_if(LINEAR) {
-            copy_array_with_bitmask(o._array, this->_array, _allocated);
+            if coid_constexpr_if(POOL)
+                copy_array_all(o._array, this->_array);
+            else
+                copy_array_with_bitmask(o._array, this->_array, _allocated);
         }
         else {
             //using page = typename storage_t::page;
@@ -163,32 +173,37 @@ public:
 
             this->prepare_storage_copy(o);
 
-            bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
-            bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
-            bitmask_type const* pm = bm;
-            uints gbase = 0;
+            if coid_constexpr_if(POOL) {
+                for_range_unchecked(0, created(), [&](T* p, uints id) { new(p) T(*o.ptr(id)); });
+            }
+            else {
+                bitmask_type const* bm = const_cast<bitmask_type const*>(_allocated.ptr());
+                bitmask_type const* em = const_cast<bitmask_type const*>(_allocated.ptre());
+                bitmask_type const* pm = bm;
+                uints gbase = 0;
 
-            for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
-            {
-                T* dd = const_cast<T*>(this->_pages[ip].ptr());
-                const T* ds = o._pages[ip].ptr();
+                for (uints ip = 0; ip < this->_pages.size(); ++ip, gbase += page::ITEMS)
+                {
+                    T* dd = const_cast<T*>(this->_pages[ip].ptr());
+                    const T* ds = o._pages[ip].ptr();
 
-                bitmask_type const* epm = em - pm > page::NMASK
-                    ? pm + page::NMASK
-                    : em;
+                    bitmask_type const* epm = em - pm > page::NMASK
+                        ? pm + page::NMASK
+                        : em;
 
-                uints pbase = 0;
+                    uints pbase = 0;
 
-                for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
-                    if (*pm == 0)
-                        continue;
+                    for (; pm != epm; ++pm, pbase += BITMASK_BITS) {
+                        if (*pm == 0)
+                            continue;
 
-                    uints m = 1;
-                    for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
-                        if (*pm & m)
-                            new (dd + (pbase + i)) T(ds[pbase + i]);
-                        else if ((*pm & ~(m - 1)) == 0)
-                            break;
+                        uints m = 1;
+                        for (int i = 0; i < BITMASK_BITS; ++i, m <<= 1) {
+                            if (*pm & m)
+                                new (dd + (pbase + i)) T(ds[pbase + i]);
+                            else if ((*pm & ~(m - 1)) == 0)
+                                break;
+                        }
                     }
                 }
             }
@@ -303,9 +318,65 @@ public:
         extarray_reserve(nitems, reserve_mode::virtual_space);
     }
 
+    /// @brief Creates an item in the given slot, constructed with the default constructor
+    /// @param slot_id - slot for the item; it may lie past the created slots, the slots in between stay free
+    /// @return the new item, or nullptr if the slot is occupied
+    /// @note The item's ext values are constructed with it.
+    T* create(uints slot_id) COID_REQUIRES((!POOL))
+    {
+        bool is_new;
+        T* result = get_or_create_uninit_internal(slot_id, &is_new);
+        if (!is_new)
+            return nullptr;
 
-    ///Insert object
-    /// @return pointer to the newly inserted object
+        extarray_construct_default(get_item_id(result), false);
+        return new(result) T();
+    }
+
+    /// @brief Creates an item in the given slot, uninitialized
+    /// @param slot_id - slot for the item; it may lie past the created slots, the slots in between stay free
+    /// @return the uninitialized item, or nullptr if the slot is occupied
+    /// @note The caller constructs the item and its ext values (value_array).
+    T* create_uninit(uints slot_id) COID_REQUIRES((!POOL))
+    {
+        bool is_new;
+        T* result = get_or_create_uninit_internal(slot_id, &is_new);
+
+        return is_new ? result : nullptr;
+    }
+
+    /// @brief Gets the item of the given slot in the pool mode, constructing it with the default constructor when the
+    ///  slot is new
+    /// @param slot_id - slot for the item; it may lie past the created slots, the free slots in between are constructed
+    /// @param[out] is_new - true when the item was constructed now; false when the slot holds a constructed item - one
+    ///  allocated already, or a free pooled one, which is allocated now and keeps its previous values
+    /// @return the item
+    /// @note A new item's ext values are constructed with it.
+    T* create(uints slot_id, bool& is_new) COID_REQUIRES((POOL))
+    {
+        T* result = get_or_create_uninit_internal(slot_id, &is_new);
+        if (!is_new)
+            return result;
+
+        extarray_construct_default(get_item_id(result), false);
+        return new(result) T();
+    }
+
+    /// @brief Gets the item of the given slot in the pool mode, without constructing it
+    /// @param slot_id - slot for the item; it may lie past the created slots, the free slots in between are constructed
+    /// @param[out] is_new - true when the slot is new: the item and its ext values are uninitialized and the caller
+    ///  constructs them (value_array); false when the slot holds a constructed item - one allocated already, or a free
+    ///  pooled one, which is allocated now and keeps its previous values
+    /// @return the item
+    T* create_uninit(uints slot_id, bool& is_new) COID_REQUIRES((POOL))
+    {
+        return get_or_create_uninit_internal(slot_id, &is_new);
+    }
+
+
+    /// @brief Inserts a copy of an object into the lowest free slot
+    /// @param v - the object to copy
+    /// @return the inserted item
     T* push(const T& v)
     {
         uints id = -1;
@@ -317,8 +388,9 @@ public:
         return copy_object(p, isold, v);
     }
 
-    ///Insert object
-    /// @return pointer to the newly inserted object
+    /// @brief Inserts an object into the lowest free slot, moving it
+    /// @param v - the object to move from
+    /// @return the inserted item
     T* push(T&& v)
     {
         uints id = -1;
@@ -330,118 +402,119 @@ public:
         return this->copy_object(p, isold, std::forward<T>(v));
     }
 
-    ///Add new object initialized with constructor matching the arguments
-    template<class...Ps>
-    T* push_construct(Ps&&... ps)
+    /// @brief Adds an item to the lowest free slot, constructed with the default constructor - in the pool mode a free
+    ///  pooled item is reused as it is
+    /// @param item_id_out - optional, receives the item's id (item_id_type)
+    /// @return the added item
+    T* add(item_id_type* item_id_out = nullptr)
     {
-        uints id = -1;
+        uints slot_id = -1;
         bool isold = _count < created();
-        T* p = isold ? alloc(&id) : append<false>(&id);
+        T* p = isold ? alloc(&slot_id) : append<false>(&slot_id);
 
-        extarray_construct_default(id, isold);
+        set_id_out_internal(slot_id, item_id_out);
 
-        return construct_object(p, isold, std::forward<Ps>(ps)...);
-    }
-
-    ///Add new object initialized with default constructor, or reuse one in pool mode
-    T* add(uints* pid = 0)
-    {
-        uints id = -1;
-        bool isold = _count < created();
-        T* p = isold ? alloc(&id) : append<false>(&id);
-
-        if (pid)
-            *pid = id;
-
-        extarray_construct_default(id, isold);
+        extarray_construct_default(slot_id, isold);
 
         return construct_default(p, isold);
     }
 
-    ///Add completely new object, ignoring any unused ones
-    T* add_new(uints* pid = 0)
+    /// @brief Adds an item in a new slot past the created ones, constructed with the default constructor; free slots are
+    ///  not reused
+    /// @param item_id_out - optional, receives the item's id (item_id_type)
+    /// @return the added item
+    T* add_new(item_id_type* item_id_out = nullptr)
     {
-        uints id = -1;
-        T* p = append<false>(&id);
+        uints slot_id = -1;
+        T* p = append<false>(&slot_id);
 
-        if (pid)
-            *pid = id;
+        set_id_out_internal(slot_id, item_id_out);
 
-
-        extarray_construct_default(get_item_id(p), false);
+        extarray_construct_default(slot_id, false);
 
         return construct_default(p, false);
     }
 
-    ///Add new object or reuse one from pool if predicate returns true
-    template <typename Func>
-    T* add_if(Func fn, uints* pid = 0) COID_REQUIRES((POOL))
+    /// @brief Adds an item in the pool mode, reusing the first free pooled item the predicate accepts
+    /// @param pred - bool pred([const] T&) or bool pred([const] T&, uints slot_id), asked about the free pooled items
+    /// @param item_id_out - optional, receives the item's id (item_id_type)
+    /// @return the reused item as it is, or a new item constructed with the default constructor when the predicate
+    ///  accepts none
+    template <typename Pred>
+    T* add_if(Pred pred, item_id_type* item_id_out = nullptr) COID_REQUIRES((POOL))
     {
         bool isold = _count < created();
 
         if (!isold)
         {
-            uints id = -1;
-            T* result = new(append<false>(&id)) T;
-            extarray_construct_default(id, false);
-            if (pid)
-                *pid = id;
+            uints slot_id = -1;
+            T* result = new(append<false>(&slot_id)) T;
+            extarray_construct_default(slot_id, false);
+            set_id_out_internal(slot_id, item_id_out);
 
             return result;
         }
 
-        uints unused_id = find_unused(fn);
+        uints unused_id = find_unused(pred);
 
         if (unused_id != UMAXS)
         {
-            return alloc_item(pid ? (*pid = unused_id) : unused_id);
+            T* result = alloc_item(unused_id);
+            set_id_out_internal(unused_id, item_id_out);
+
+            return result;
         }
         else
         {
-            uints id = -1;
-            T* result = new(append<false>(&id)) T;
-            extarray_construct_default(id, false);
-            if (pid)
-                *pid = id;
+            uints slot_id = -1;
+            T* result = new(append<false>(&slot_id)) T;
+            extarray_construct_default(slot_id, false);
+            set_id_out_internal(slot_id, item_id_out);
 
             return result;
         }
     }
 
-    ///Add new object, uninitialized (no constructor invoked on the object)
-    /// @param newitem optional variable that receives whether the object slot was newly created (true) or reused from the pool (false)
-    /// @note if newitem == 0 within the pool mode and thus no way to indicate the item has been reused, the reused objects have destructors called
-    T* add_uninit(bool* newitem = 0, uints* pid = 0)
+    /// @brief Adds an item to the lowest free slot, uninitialized
+    /// @param item_id_out - optional, receives the item's id (item_id_type)
+    /// @return the uninitialized item
+    /// @note The caller constructs the item and its ext values (value_array).
+    T* add_uninit(item_id_type* item_id_out = nullptr) COID_REQUIRES((!POOL))
     {
-        if (_count < created()) {
-            T* p = alloc(pid);
-            if coid_constexpr_if(POOL) {
-                if (!newitem) destroy(*p);
-                else *newitem = false;
-            }
-            else if (newitem)
-                *newitem = true;
-            return p;
-        }
-        if (newitem) *newitem = true;
-        return append<true>(pid);
+        uints slot_id;
+        T* p = add_uninit_internal(nullptr, &slot_id);
+        set_id_out_internal(slot_id, item_id_out);
+        return p;
     }
 
-    ///Add range of objects initialized with default constructors
-    /// @return id to the beginning of the allocated range
-    /// @note The range is can be non contiguous in case of paged slotalloc (the range can cross the page boundary)
+    /// @brief Adds an item to the lowest free slot in the pool mode, without constructing it
+    /// @param[out] is_new - true when the slot is new: the item and its ext values are uninitialized and the caller
+    ///  constructs them (value_array); false when it is a reused pooled item, returned as it is with its ext values
+    /// @param item_id_out - optional, receives the item's id (item_id_type)
+    /// @return the item
+    T* add_uninit(bool& is_new, item_id_type* item_id_out = nullptr) COID_REQUIRES((POOL))
+    {
+        uints slot_id;
+        T* p = add_uninit_internal(&is_new, &slot_id);
+        set_id_out_internal(slot_id, item_id_out);
+        return p;
+    }
+
+    /// @brief Adds a range of items constructed with the default constructor - in the pool mode reused pooled items
+    ///  stay as they are
+    /// @param n - number of items
+    /// @return slot of the first item, UMAXS when n is 0
+    /// @note A paged slotalloc's range may cross a page boundary, so the items need not be contiguous in memory.
     uints add_range(uints n)
     {
         if (n == 0)
             return UMAXS;
-        if (n == 1) {
-            uints id;
-            add(&id);
-            return id;
-        }
+        if (n == 1)
+            return get_item_id(add());
 
+        //uninitialized - the loop constructs each item once (an initializing allocation constructs the created ones too)
         uints nold;
-        uints id = alloc_range<false>(n, &nold);
+        uints id = alloc_range<true>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p, uints id) {
             construct_default(p, nold > 0);
@@ -467,8 +540,9 @@ public:
         if (n == 1)
             return range<T>(add(), 1);
 
+        //uninitialized - the loop constructs each item once (an initializing allocation constructs the created ones too)
         uints nold;
-        uints id = alloc_range_contiguous<false>(n, &nold);
+        uints id = alloc_range_contiguous<true>(n, &nold);
 
         for_range_unchecked(id, n, [&](T* p, uints id) {
             construct_default(p, nold > 0);
@@ -480,147 +554,124 @@ public:
         return range<T>(ptr(id), n);
     }
 
-    ///Delete object by pointer
+    /// @brief Deletes an item - in the pool mode it stays constructed, for reuse
+    /// @param p - the item
     void del_item_by_ptr(const T* p)
     {
         const uints id = get_item_id(p);
         del_item_internal(ptr(id), id);
     }
 
-    ///Delete object by id
-    void del_item(uints id)
+    /// @brief Deletes an item by its id - in the pool mode it stays constructed, for reuse
+    /// @param item_id - the item's id (item_id_type); with versioning an id of an earlier item in the slot is refused
+    void del_item(item_id_type item_id)
     {
-        DASSERT_RET(id < created());
-        del_item_internal(ptr(id), id);
+        if coid_constexpr_if(VERSIONING) {
+            DASSERT_RET(this->check_versionid(item_id));
+            del_item_by_slot_internal(item_id.id32());
+        }
+        else {
+            del_item_by_slot_internal(item_id);
+        }
     }
 
-
-    ///Delete object by versionid
-    void del_item(versionid vid) COID_REQUIRES((VERSIONING))
-    {
-        DASSERT_RET(this->check_versionid(vid));
-
-        return del_item(vid.id32());
-    }
-
-    /// @return previously deleted but still valid item
-    /// @note only works in POOL mode
-    T* undel_item(uints id) COID_REQUIRES((POOL))
+    /// @brief Brings a deleted item back, in the pool mode
+    /// @param item_id - the deleted item's id (item_id_type)
+    /// @return the item with its values from before the deletion; with versioning nullptr when the slot has got
+    ///  another item since
+    /// @note The slot must be free - undeleting an allocated slot is a usage error (asserted, nullptr).
+    T* undel_item(item_id_type item_id) COID_REQUIRES((POOL))
     {
         static_assert(POOL, "only available in pool mode");
 
-        if (POOL && id < created()) {
+        uints id;
+        if coid_constexpr_if(VERSIONING) {
+            //an id of an earlier item - the slot has got another item since, which is a normal outcome, not an error
+            if (!this->check_versionid(item_id))
+                return nullptr;
+            id = item_id.id32();
+        }
+        else {
+            id = item_id;
+        }
+
+        if (id < created())
+        {
             if (!set_bit(id))
+            {
                 ++_count;
-            else {
+            }
+            else 
+            {
                 DASSERTN(0);
-                return 0;
+                return nullptr;
             }
 
             return ptr(id);
         }
 
-        return 0;
+        DASSERTN(0);
+        return nullptr;
     }
 
-    /// @return previously deleted but still valid item with correct version
-    /// @note only works in POOL mode
-    T* undel_item(versionid vid) COID_REQUIRES((VERSIONING && POOL))
-    {
-        static_assert(POOL, "only available in pool mode");
-        uint id = uint(vid);
 
-        if (POOL && id < this->_created) {
-            if (this->check_versionid(vid)) {
-                if (!set_bit(id))
-                    ++_count;
-                else {
-                    DASSERTN(0);
-                    return 0;
-                }
-            }
-
-            return ptr(id);
-        }
-
-        return 0;
-    }
-
-    ///Mark object deleted without running the destructor
-    /// @note useful for deletion of objects from within item destructors
-    void del_nodestruct(T* p)
-    {
-        static_assert(!POOL, "error: cannot be used in pool mode");
-
-        uints id = get_item_id(p);
-        if (id >= created())
-            throw exception("attempting to delete an invalid object ") << id;
-
-        DASSERT_RET(get_bit(id));
-
-        this->set_modified(id);
-        this->bump_version(id);
-
-        if (clear_bit(id))
-            --_count;
-        else
-            DASSERTN(0);
-    }
-
-    void del_range(uints item_id, uints n) {
-        if (n == 0)
+    /// @brief Deletes a range of items - in the pool mode they stay constructed, for reuse
+    /// @param slot_id - slot of the first item
+    /// @param count - number of items
+    void del_range(uints slot_id, uints count) {
+        if (count == 0)
             return;
-        if (n == 1)
-            return del_item(item_id);
+        if (count == 1)
+            return del_item_by_slot_internal(slot_id);
 
-        uints idk = item_id;
+        uints idk = slot_id;
 
         if coid_constexpr_if(LINEAR) {
-            auto b = this->_array.ptr() + item_id;
-            auto e = b + n;
+            auto b = this->_array.ptr() + slot_id;
+            auto e = b + count;
 
-            for (; b < e; ++b) {
+            for (; b < e; ++b, ++idk) {
                 if coid_constexpr_if(!POOL)
                 {
                     b->~T();
                     extarray_destruct(idk);
                 }
-                this->bump_version(idk++);
             }
         }
         else {
             //using page = typename storage_t::page;
             typedef typename storage_t::page page;
 
-            uint pg = uint(item_id / page::ITEMS);
-            uint s = uint(item_id % page::ITEMS);
-            uints nr = n;
+            uint pg = uint(slot_id / page::ITEMS);
+            uint s = uint(slot_id % page::ITEMS);
+            uints nr = count;
 
             while (nr > 0) {
-                T* b = this->_pages[pg].ptr() + s;
+                T* b = this->_pages[pg++].ptr() + s;
                 uints na = stdmin(page::ITEMS - s, nr);
                 T* e = b + na;
 
-                for (; b < e; ++b) {
+                for (; b < e; ++b, ++idk) {
                     if coid_constexpr_if(!POOL)
                     {
                         b->~T();
                         extarray_destruct(idk);
                     }
-                    this->bump_version(idk++);
                 }
 
                 nr -= na;
                 s = 0;
             }
         }
-        _count -= clear_bitrange(item_id, n, _allocated.ptr());
+        _count -= clear_bitrange(slot_id, count, _allocated.ptr());
     }
 
-    ///Del range of objects
-    void del_range(T* p, uints n)
+    /// @brief Deletes a range of items - in the pool mode they stay constructed, for reuse
+    /// @param item_ptr - the first item
+    /// @param count - number of items
+    void del_range(T* item_ptr, uints count)
     {
-        del_range(get_item_id(p), n);
+        del_range(get_item_id(item_ptr), count);
     }
 
     /// @return number of used slots in the container
@@ -720,100 +771,6 @@ public:
     }
 
 
-    ///Get a particular item from given slot or default-construct a new one there
-    /// @param id item id, reverts to add() if UMAXS
-    /// @param is_new optional if not null, receives true if the item was newly created
-    /// @note a deleted item in POOL mode is also considered newly created here
-    T* get_or_create(uints id, bool* is_new = 0)
-    {
-        if (id == UMAXS) {
-            if (is_new) *is_new = true;
-            return add();
-        }
-
-        if (id < created()) {
-            //within allocated space
-            this->set_modified(id);
-
-            T* p = ptr(id);
-
-            if (get_bit(id)) {
-                //existing object
-                if (is_new) *is_new = false;
-                return p;
-            }
-
-            if coid_constexpr_if(!POOL)
-                new(p) T;
-
-            set_bit(id);
-
-            ++_count;
-
-            if (is_new) *is_new = true;
-            return p;
-        }
-
-        //extra space needed
-        uints n = id + 1 - created();
-
-        expand<false, false>(n);
-
-        this->set_modified(id);
-
-        set_bit(id);
-
-        ++_count;
-
-        if (is_new) *is_new = true;
-        return ptr(id);
-    }
-
-    ///Get a particular item from given slot or default-construct a new one there
-    /// @param id item id, reverts to add() if UMAXS
-    /// @param is_new optional if not null, receives true if the item was newly created (also not restored from pool)
-    T* get_or_create_uninit(uints id, bool* is_new = 0)
-    {
-        if (id == UMAXS) {
-            if (is_new) *is_new = true;
-            return add_uninit();
-        }
-
-        if (id < created()) {
-            //within allocated space
-            this->set_modified(id);
-
-            T* p = ptr(id);
-
-            if (get_bit(id)) {
-                //existing object
-                if (is_new) *is_new = false;
-                return p;
-            }
-
-            set_bit(id);
-
-            ++_count;
-
-            if (is_new) *is_new = !POOL;
-            return p;
-        }
-
-        //extra space needed
-        uints n = id + 1 - created();
-
-        expand<true, true>(n);
-
-        this->set_modified(id);
-
-        set_bit(id);
-
-        ++_count;
-
-        if (is_new) *is_new = true;
-        return ptr(id);
-    }
-
     /// @return id of given item, or UMAXS if the item is not managed here
     uints get_item_id(const T* p) const
     {
@@ -902,18 +859,18 @@ public:
 
 
     ///Reset content. Destructors aren't invoked in the pool mode, as the objects may still be reused.
+    /// @note with versioning the versions are kept - the next item in a slot bumps its version, so an id from before the reset
+    ///       never matches a later item (in the pool mode undel_item brings the item back by its id until its slot is reused)
     void reset()
     {
         if coid_constexpr_if(TRACKING)
             mark_all_modified(false);
 
-        //destroy occupied slots
+        //destroy occupied slots - the pool mode keeps its items and their ext values
         if coid_constexpr_if(!POOL) {
             destruct();
             extarray_reset();
         }
-        else
-            extarray_reset_count();
 
         _count = 0;
 
@@ -921,11 +878,15 @@ public:
     }
 
     ///Discard content. Also destroys pooled objects and frees memory
+    /// @note the versions are freed too - an id from before can match a later item
     void discard()
     {
-        //destroy occupied slots
+        //destroy occupied slots - in the pool mode all created ones
         destruct();
 
+        //without the pool mode the ext values were destroyed with their slots
+        if coid_constexpr_if(!POOL)
+            extarray_reset();
         extarray_discard();
 
         _count = 0;
@@ -1061,6 +1022,94 @@ protected:
     }
 
 protected:
+    ///Deletes the item in a slot (del_item, del_range; derived containers) - in the pool mode it stays constructed
+    /// @param slot_id - the slot; with versioning the public deletion goes by the item's id, so that an id of an earlier
+    ///        item in the slot is refused - this one does not check
+    void del_item_by_slot_internal(uints slot_id)
+    {
+        DASSERT_RET(slot_id < created());
+        del_item_internal(ptr(slot_id), slot_id);
+    }
+
+    ///Add new object, uninitialized (add_uninit; derived containers)
+    /// @param is_new receives whether the slot is new (true) - its item and ext values uninitialized, the caller constructs
+    ///        them (value_array) - or a reused pooled one (false), returned as it is - its item and ext values constructed;
+    ///        mandatory in the pool mode (the caller couldn't tell), optional without it (a slot is always new)
+    /// @param slot_id_out optional, receives the item's slot
+    T* add_uninit_internal(bool* is_new = nullptr, uints* slot_id_out = nullptr)
+    {
+        if coid_constexpr_if(POOL)
+            DASSERT_RETX(is_new != nullptr, "bad usage - the pool mode needs is_new, a reused pooled item is constructed", nullptr);
+
+        if (_count < created()) {
+            T* p = alloc(slot_id_out);
+            if (is_new)
+                *is_new = !POOL;
+            return p;
+        }
+        if (is_new) *is_new = true;
+        return append<true>(slot_id_out);
+    }
+
+    ///Get a particular item from given slot or an uninitialized new one there (derived containers - slothash's
+    /// push_construct_in_slot)
+    /// @param id item id, reverts to add_uninit_internal() if UMAXS
+    /// @param is_new receives true if the item is new - its item and ext values uninitialized, the caller constructs them
+    ///        (value_array) - false for an existing item or a reused pooled one (constructed); mandatory in the pool mode,
+    ///        optional without it
+    T* get_or_create_uninit_internal(uints id, bool* is_new)
+    {
+        if coid_constexpr_if(POOL)
+            DASSERT_RETX(is_new != nullptr, "bad usage - the pool mode needs is_new, a reused pooled item is constructed", nullptr);
+
+        if (id == UMAXS)
+            return add_uninit_internal(is_new);
+
+        if (id < created()) {
+            //within allocated space
+            this->set_modified(id);
+
+            T* p = ptr(id);
+
+            if (get_bit(id)) {
+                //existing object
+                if (is_new) *is_new = false;
+                return p;
+            }
+
+            this->bump_version(id);
+            set_bit(id);
+
+            ++_count;
+
+            if (is_new) *is_new = !POOL;
+            return p;
+        }
+
+        //extra space needed
+        uints n = id + 1 - created();
+
+        expand<true, true>(n);
+
+        //the pool mode's free slots are constructed - the ones created before the slot
+        if coid_constexpr_if(POOL) {
+            for (uints k = id + 1 - n; k < id; ++k) {
+                new(ptr(k)) T;
+                extarray_construct_default(k, false);
+            }
+        }
+
+        this->set_modified(id);
+
+        this->bump_version(id);
+        set_bit(id);
+
+        ++_count;
+
+        if (is_new) *is_new = true;
+        return ptr(id);
+    }
+
     template <class Te>
     static Te* construct_default_extarray_value(Te * p, bool isold) {
         if coid_constexpr_if(POOL) {
@@ -1077,9 +1126,17 @@ protected:
         p->~Te();
     }
 
+    ///Destroys the items: in the pool mode all created ones (the free pooled items are constructed too; their ext values are
+    /// destroyed with the ext arrays), else the allocated ones with their ext values
     void destruct()
     {
-        for_each([](T& v) { destroy(v); });
+        if coid_constexpr_if(POOL)
+            for_range_unchecked(0, created(), [](T* p) { destroy(*p); });
+        else
+            for_each([this](T& v, uints id) {
+                destroy(v);
+                extarray_destruct(id);
+            });
 
         if coid_constexpr_if (LINEAR)
             this->_array.set_size(0);
@@ -1808,7 +1865,19 @@ public:
         return iterator(const_cast<base_t*>(this), uints(-1));
     }
 
-protected:
+protected: // methods only
+
+    ///Writes an item's id (item_id_type) to item_id_out if not null - with versioning slot_id's versionid, else slot_id
+    void set_id_out_internal(uints slot_id, item_id_type* item_id_out) const
+    {
+        if (!item_id_out)
+            return;
+
+        if coid_constexpr_if(VERSIONING)
+            *item_id_out = this->get_versionid(slot_id);
+        else
+            *item_id_out = slot_id;
+    }
 
     uints next_index(bitmask_type index) const
     {
@@ -1846,6 +1915,21 @@ protected:
             return this->_created;
     }
 
+    template <class Te>
+    static void copy_array_all(const dynarray<Te>& src, dynarray<Te>& dst)
+    {
+        uints rsv = src.reserved_virtual();
+        if (rsv > 0)
+            dst.reserve(rsv, reserve_mode::virtual_space);
+        else
+            dst.reserve(src.reserved_total(), reserve_mode::memory);
+        Te* dd = dst.add_uninit(src.size());
+        const Te* sd = src.ptr();
+
+        for (uints i = 0, n = src.size(); i < n; ++i)
+            new (dd + i) Te(sd[i]);
+    }
+
     template <class Te, class bitmask_type>
     static void copy_array_with_bitmask(const dynarray<Te>& src, dynarray<Te>& dst, const dynarray<bitmask_type>& mask)
     {
@@ -1880,10 +1964,7 @@ protected:
 
         this->set_modified(id);
 
-        //bump version on deletion, but not for pooled items that may be resurrected yet
-        if coid_constexpr_if(!POOL)
-            this->bump_version(id);
-
+        //the version stays - the slot's next item bumps it (a pooled item can be undeleted by its id until then)
         if (clear_bit(id))
             --_count;
         else
@@ -1907,14 +1988,19 @@ private:
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
 
-    ///Helper to expand all ext arrays
+    ///The ext arrays besides the version array - the version array (the last ext array of a versioning allocator) keeps a
+    /// slot's version until the slot's next item bumps it: it isn't expanded, reset or constructed with the others (expand
+    /// grows it)
+    static constexpr size_t plain_extarray_count = tracker_t::extarray_size - (VERSIONING ? 1 : 0);
+
+    ///Helper to expand all ext arrays but the version array
     template<size_t... Index>
     void extarray_expand_(index_sequence<Index...>, uints n) {
         int dummy[] = {0, ((void)std::get<Index>(this->_exts).add(n), 0)...};
     }
 
     void extarray_expand(uints n) {
-        extarray_expand_(make_index_sequence<tracker_t::extarray_size>(), n);
+        extarray_expand_(make_index_sequence<plain_extarray_count>(), n);
     }
 
     ///Helper to expand all ext arrays
@@ -1924,27 +2010,18 @@ private:
     }
 
     void extarray_expand_uninit(uints n = 1) {
-        extarray_expand_uninit_(make_index_sequence<tracker_t::extarray_size>(), n);
+        extarray_expand_uninit_(make_index_sequence<plain_extarray_count>(), n);
     }
 
-    ///Helper to reset all ext arrays
+    ///Helper to empty all ext arrays but the version array - the values aren't destroyed: without the pool mode an
+    /// allocated slot's are destroyed with its item (destruct), a free slot has none
     template<size_t... Index>
     void extarray_reset_(index_sequence<Index...>) {
-        int dummy[] = {0, ((void)std::get<Index>(this->_exts).reset(), 0)...};
-    }
-
-    void extarray_reset() {
-        extarray_reset_(make_index_sequence<tracker_t::extarray_size>());
-    }
-
-    ///Helper to set_count(0) all ext arrays
-    template<size_t... Index>
-    void extarray_reset_count_(index_sequence<Index...>) {
         int dummy[] = {0, ((void)std::get<Index>(this->_exts).set_size(0), 0)...};
     }
 
-    void extarray_reset_count() {
-        extarray_reset_count_(make_index_sequence<tracker_t::extarray_size>());
+    void extarray_reset() {
+        extarray_reset_(make_index_sequence<plain_extarray_count>());
     }
 
     ///Helper to discard all ext arrays
@@ -1979,7 +2056,9 @@ private:
     ///Helper to iterate over all ext arrays
     template<size_t... Index>
     void extarray_copy_(const slotalloc_base& o, index_sequence<Index...>) {
-        int dummy[] = {0, ((void)copy_array_with_bitmask(std::get<Index>(o._exts), std::get<Index>(this->_exts), _allocated), 0)...};
+        int dummy[] = {0, ((void)((POOL || Index >= plain_extarray_count)
+            ? copy_array_all(std::get<Index>(o._exts), std::get<Index>(this->_exts))
+            : copy_array_with_bitmask(std::get<Index>(o._exts), std::get<Index>(this->_exts), _allocated)), 0)...};
     }
 
     void extarray_copy(const slotalloc_base& o) {
@@ -2004,8 +2083,9 @@ private:
         int dummy[] = { 0, (construct_default_extarray_value(std::get<Index>(this->_exts).ptr() + id, is_old), 0)...};
     }
 
+    ///Constructs a slot's ext array values but the version - the slot's allocation bumps its version
     void extarray_construct_default(uints id, bool is_old) {
-        extarray_construct_default_(make_index_sequence<tracker_t::extarray_size>(), id, is_old);
+        extarray_construct_default_(make_index_sequence<plain_extarray_count>(), id, is_old);
     }
 
     ///Helper to iterate over all ext arrays
@@ -2014,8 +2094,9 @@ private:
         int dummy[] = { 0, (destruct_extarray_value(std::get<Index>(this->_exts).ptr() + id), 0)... };
     }
 
+    ///Destructs a slot's ext array values but the version - see extarray_construct_default
     void extarray_destruct(uints id) {
-        extarray_destruct_(make_index_sequence<tracker_t::extarray_size>(), id);
+        extarray_destruct_(make_index_sequence<plain_extarray_count>(), id);
     }
 
 #ifdef __clang__
@@ -2046,6 +2127,14 @@ private:
         }
     }
 
+    ///Bumps the versions of the slots getting new items
+    void bump_versions(uints first, uints n)
+    {
+        if coid_constexpr_if(VERSIONING)
+            for (uints id = first; id < first + n; ++id)
+                this->bump_version(id);
+    }
+
     ///Return allocated slot
     T* alloc(uints* pid)
     {
@@ -2069,6 +2158,8 @@ private:
         if (pid)
             *pid = id;
 
+        //a new item in the slot - the version before the bit (a reader that sees the bit sees the version)
+        this->bump_version(id);
         *p |= uints(1) << bit;
         ++_count;
 
@@ -2084,6 +2175,7 @@ private:
         bitmask_type* p = &_allocated[id / BITMASK_BITS];
         uint8 bit = id & (BITMASK_BITS - 1);
 
+        this->bump_version(id);
         *p |= uints(1) << bit;
         ++_count;
 
@@ -2103,13 +2195,19 @@ private:
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
 
+        //new items in the slots - the versions of the reused slots are bumped before their bits are set, of the created
+        // ones after the expansion
+        uints ncr = created();
+        uints nreused = id < ncr ? stdmin(n, ncr - id) : 0;
+        bump_versions(id, nreused);
+
         set_bitrange(id, n, _allocated.ptr());
 
-        uints ncr = created();
         uints nadd = id + n > ncr ? id + n - ncr : 0;
         if (nadd)
             expand<UNINIT, UNINIT>(nadd);
-        *old = n - nadd;
+        bump_versions(id + nreused, n - nreused);
+        *old = nreused;
 
         _count += n;
 
@@ -2173,13 +2271,27 @@ private:
         if (nslots > _allocated.size())
             _allocated.addc(nslots - _allocated.size());
 
+        //new items in the slots - the versions of the reused slots are bumped before their bits are set, of the created
+        // ones after the expansion
+        uints ncr = created();
+        uints nreused = id < ncr ? stdmin(n, ncr - id) : 0;
+        bump_versions(id, nreused);
+
         set_bitrange(id, n, _allocated.ptr());
 
-        uints ncr = created();
         uints nadd = id + n > ncr ? id + n - ncr : 0;
         if (nadd)
             expand<UNINIT,UNINIT>(nadd);
-        *old = n - nadd;
+        bump_versions(id + nreused, n - nreused);
+        *old = nreused;
+
+        //a range on a new page skips the free end of the last page - in the pool mode the free slots are constructed
+        if coid_constexpr_if(POOL && UNINIT) {
+            for (uints k = ncr; k < id; ++k) {
+                new(ptr(k)) T;
+                extarray_construct_default(k, false);
+            }
+        }
 
         _count += n;
 
@@ -2201,6 +2313,8 @@ private:
         ++_count;
 
         T* result = expand<true, EXT_UNINIT>(1);
+        //the slot created by the expansion gets its item - its version (0, or kept by a reset) is bumped
+        this->bump_version(count);
         this->set_modified(count);
 
         return result;
@@ -2235,21 +2349,20 @@ private:
             this->_created += n;
         }
 
-        // Expand ext arrays
-        if coid_constexpr_if(UNINIT)
-        {
+        // Expand ext arrays - without the pool mode a free slot's ext values aren't constructed, the allocation constructs
+        // its slot's
+        if coid_constexpr_if(UNINIT || !POOL)
             extarray_expand_uninit(n);
-            if coid_constexpr_if(VERSIONING)
-            {
-                // always set zeros to version arrays even on uninit expand
-                auto& version_arr = tracker_t::version_array();
-                constexpr static uint8 version_type_byte_size = sizeof(std::remove_reference_t<decltype(version_arr)>::value_type);
-                version_arr.memset(version_arr.ptre() - n, 0, n * version_type_byte_size);
-            }
-        }
         else
-        {
             extarray_expand(n);
+
+        // the version array keeps the versions of the slots freed by a reset (created again here) - it grows only past them;
+        // a new slot's version starts from 0 (also on an uninit expand), its first item bumps it to 1
+        if coid_constexpr_if(VERSIONING)
+        {
+            auto& version_arr = tracker_t::version_array();
+            if (version_arr.size() < created())
+                version_arr.add(created() - version_arr.size());
         }
 
         //in POOL mode the unallocated items in between the valid ones are assumed to be constructed

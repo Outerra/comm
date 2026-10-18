@@ -52,7 +52,8 @@ enum class slotalloc_mode
 
     atomic = 4,             //< ins/del operations are done atomically, one inserter, multiple deleters allowed
     tracking = 8,           //< adds data and methods needed for tracking the modifications
-    versioning = 16,        //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid
+    versioning = 16,        //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid;
+                            //  a slot's version is bumped when the slot gets a new item (the first item has version 1) - a deletion or a reset keeps it, an id is valid with the slot's allocated bit (is_valid_id)
 
     multikey = 128,         //< used by slothash for multi-key value support
 };

@@ -404,6 +404,7 @@
     <ClCompile Include="..\..\..\comm_test\comm\meta3.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\ref_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\roundbuffer_tests.cpp" />
+    <ClCompile Include="..\..\..\comm_test\comm\slotalloc_tests.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\regex.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\singletons_test.cpp" />
     <ClCompile Include="..\..\..\comm_test\comm\stream.cpp" />
