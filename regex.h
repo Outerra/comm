@@ -60,7 +60,10 @@ struct token;
      delimiter must be preceded by a \; other metacharacters have no special meaning and
      may appear unescaped.
 
-    A . matches any character.
+    A . matches any character except newline; with star_match_newline it matches newline too.
+
+    With icase, letters match in either case, in literals and in character classes. Only ASCII
+    letters are folded.
 
     A ^ matches the beginning of a line; $ matches the end of the line.
 
@@ -73,6 +76,10 @@ struct token;
 
     A match to any part of a regular expression extends as far as possible without preventing
     a match to the remainder of the regular expression.
+
+    The optional sub array receives nsub subexpressions: sub[0] is the whole match and sub[n] the
+    n-th parenthesis, counted by its opening bracket. Groups beyond nsub are matched but not
+    recorded; a group that took no part in the match is a null token.
 **/
 struct regex
 {
@@ -82,6 +89,17 @@ struct regex
         bool star_match_newline = false,
         bool icase = false);
 
+    ~regex();
+
+    ///A regex owns its compiled program, so it can be moved but not copied
+    regex(regex&& other) noexcept;
+    regex& operator = (regex&& other) noexcept;
+
+    regex(const regex&) = delete;
+    regex& operator = (const regex&) = delete;
+
+    ///Compile a pattern, replacing the current one
+    /// @note if the pattern is malformed, throws and keeps the current one
     void compile(token rt, bool literal, bool star_match_newline, bool icase);
 
 
@@ -97,7 +115,7 @@ struct regex
 
 private:
 
-    regex_program* _prog;
+    regex_program* _prog = nullptr;
 };
 
 COID_NAMESPACE_END

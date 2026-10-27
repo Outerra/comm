@@ -47,18 +47,40 @@ static thread_key tk_regex;
 
 ////////////////////////////////////////////////////////////////////////////////
 regex::regex() {
-    _prog = 0;
 }
 
 regex::regex(token rt, bool literal, bool star_match_newline, bool icase) {
     compile(rt, literal, star_match_newline, icase);
 }
 
+regex::~regex() {
+    delete _prog;
+}
+
+regex::regex(regex&& other) noexcept
+    : _prog(other._prog)
+{
+    other._prog = nullptr;
+}
+
+regex& regex::operator = (regex&& other) noexcept
+{
+    if (this != &other) {
+        delete _prog;
+        _prog = other._prog;
+        other._prog = nullptr;
+    }
+    return *this;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void regex::compile(token rt, bool literal, bool star_match_newline, bool icase)
 {
     Reljunk* j = thread_object<Reljunk>(tk_regex);
-    _prog = j->comp.compile(rt, literal, icase, star_match_newline ? Reinst::ANYNL : Reinst::ANY);
+    regex_program* prog = j->comp.compile(rt, literal, icase, star_match_newline ? Reinst::ANYNL : Reinst::ANY);
+
+    delete _prog;
+    _prog = prog;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,7 +183,7 @@ static Relist* _appendstartstate(
     p->sub.need(nsub);
     p->match.set(ptr, (uints)0);
 
-    if (nsub && ptr < p->sub[0].ptr())
+    if (nsub)
         p->sub[0].set(ptr, (uints)0);
     for (uints i = 1; i < nsub; ++i)
         p->sub[i].set_null();
@@ -178,7 +200,7 @@ token regex_program::regexec(
     Reljunk* j
 ) const
 {
-    if (!startinst || startinst->type == Reinst::END)
+    if (!startinst)
         return bol;
 
     int flag = 0;
@@ -187,6 +209,7 @@ token regex_program::regexec(
     token result;
     bool first = true;
     bool match = false;
+    bool partial = false;           // match() reached END before the end of the string
     int checkstart = j->starttype;
 
     for (uint i = 0; i < nsub; ++i)
@@ -251,13 +274,16 @@ token regex_program::regexec(
                     }
                     break;
                 case Reinst::LBRA:
-                    tlp->sub[inst->subid].set(s.ptr(), (uints)0);
+                    // groups beyond the caller's sub array are matched but not recorded
+                    if ((uint)inst->subid < nsub)
+                        tlp->sub[inst->subid].set(s.ptr(), (uints)0);
                     continue;
                 case Reinst::RBRA:
-                    tlp->sub[inst->subid]._pte = s.ptr();
+                    if ((uint)inst->subid < nsub)
+                        tlp->sub[inst->subid]._pte = s.ptr();
                     continue;
                 case Reinst::ANY:
-                    if (r != j->any_except)
+                    if (r != '\n')
                         _appendfollowstate(nl, inst->next, tlp);
                     break;
                 case Reinst::ANYNL:
@@ -299,6 +325,11 @@ token regex_program::regexec(
                     // efficiency: advance and re-evaluate
                     continue;
                 case Reinst::END:	// Match!
+                    if (j->style == Reljunk::MATCH && !end) {
+                        // match() takes only a match that covers the whole string
+                        partial = true;
+                        break;
+                    }
                     match = true;
                     tlp->match._pte = s.ptr();
                     if (nsub)
@@ -322,8 +353,7 @@ token regex_program::regexec(
 
     //if there's something left from the string that should have been matched,
     // fail with empty token but set the ptr to the remaining part
-    if (match && j->style == Reljunk::MATCH
-        && !s.is_empty())
+    if (partial && !match)
         result.set(s.ptr(), (uints)0);
 
     return result;

@@ -214,7 +214,6 @@ struct Reljunk
 
     int	starttype = 0;
     ucs4 startchar = 0;
-    ucs4 any_except = 0;
 
     enum MatchStyle {
         SEARCH = 0,                     //< search the string and report the first occurrence
@@ -231,7 +230,6 @@ struct Reljunk
         style = match_style;
         starttype = 0;
         startchar = 0;
-        any_except = 0;
 
         if (style == SEARCH) {
             if (startinst->type == Reinst::RUNE /*&& startinst.r.r < Runeself*/) {
@@ -268,8 +266,12 @@ private:
     friend struct regex_compiler;
 
     Reinst* startinst = 0;          // start pc
-    dynarray<Reclass*> rclass;
-    dynarray<Reinst*> rinst;
+
+    // The instructions point at each other and at the classes, so neither array may move once
+    // it has elements: compile() reserves the most that a pattern of its length can produce,
+    // and the compiler checks the reservation before adding.
+    dynarray<Reclass> rclass;
+    dynarray<Reinst> rinst;
     bool icase;
 };
 

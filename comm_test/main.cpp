@@ -18,7 +18,6 @@ void metastream_test4();
 void metastream_test3();
 void metastream_test2();
 
-void regex_test();
 void test_malloc();
 void test_job_queue();
 
@@ -335,6 +334,7 @@ struct slot : storage<L, Es...>
 void data_client_test();
 void binstring_test();
 void ref_tests();
+void regex_tests();
 void atomic_stack_tests();
 void memtrack_tests();
 void mpsc_queue_tests();
@@ -347,6 +347,7 @@ void slotalloc_tests();
 int main( int argc, char* argv[] )
 {
     ref_tests();
+    regex_tests();
     atomic_stack_tests();
     memtrack_tests();
     mpsc_queue_tests();
@@ -490,7 +491,6 @@ int main( int argc, char* argv[] )
 
     //coid::test();
     metastream_test();
-    regex_test();
     //ig_test::run_test();
 
     logger::terminate();

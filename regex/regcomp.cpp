@@ -43,11 +43,19 @@
 
 COID_NAMESPACE_BEGIN
 
+/// @return true for an ASCII letter; icase folds ASCII letters only, and ::isalpha takes only
+///         values up to 255
+static bool is_ascii_alpha(ucs4 c)
+{
+    return c < 0x80 && ::isalpha(int(c));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 Reinst* regex_compiler::create(Reinst::OP type) {
-    Reinst* r = new Reinst(type);
-    *_prog->rinst.add() = r;
-    return r;
+    if (_prog->rinst.reserved_remaining() < sizeof(Reinst))
+        throw exception() << "regex program exceeds its reservation";
+
+    return new(_prog->rinst.add_uninit()) Reinst(type);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -160,13 +168,13 @@ void regex_compiler::evaluntil(Reinst::OP pri)
 void regex_program::optimize()
 {
     // get rid of NOOP chains
-    Reinst** ib = rinst.ptr();
-    Reinst** ie = rinst.ptre() - 1; //omit END
+    Reinst* ib = rinst.ptr();
+    Reinst* ie = rinst.ptre() - 1; //omit END
     for (; ib < ie; ++ib) {
-        Reinst* target = (*ib)->next;
+        Reinst* target = ib->next;
         while (target->type == Reinst::NOP)
             target = target->next;
-        (*ib)->next = target;
+        ib->next = target;
     }
 }
 
@@ -282,7 +290,9 @@ Reinst::OP regex_compiler::bldcclass(bool icase)
 
     // we have already seen the '['
     type = Reinst::CCLASS;
-    _yyclassp = (*_prog->rclass.add() = new Reclass);
+    if (_prog->rclass.reserved_remaining() < sizeof(Reclass))
+        throw exception() << "regex program exceeds its reservation";
+    _yyclassp = _prog->rclass.add();
 
     // look ahead for negation
     // SPECIAL CASE!!! negated classes don't match \n
@@ -315,7 +325,7 @@ Reinst::OP regex_compiler::bldcclass(bool icase)
             }
             *runes.last() = rune;
 
-            if (icase && ::isalpha(rune) && ::isalpha(runes.last()[-1])) {
+            if (icase && is_ascii_alpha(rune) && is_ascii_alpha(runes.last()[-1])) {
                 ucs4* p = runes.add(2) - 2;
                 p[0] = ::tolower(p[0]);
                 p[1] = ::tolower(p[1]);
@@ -326,6 +336,12 @@ Reinst::OP regex_compiler::bldcclass(bool icase)
         else {
             *runes.add() = rune;
             *runes.add() = rune;
+
+            if (icase && is_ascii_alpha(rune)) {
+                ucs4* p = runes.add(2) - 2;
+                p[0] = p[1] = ::tolower(int(rune));
+                p[2] = p[3] = ::toupper(int(rune));
+            }
         }
         quoted = nextc(&rune);
     }
@@ -373,12 +389,19 @@ regex_program* regex_compiler::compile(token s, bool literal, bool icase, Reinst
 {
     // go compile the sucker
     _string = s;
+    _andstack.reset();
+    _atorstack.reset();
     _nopenbraces = 0;
     _lastwasand = 0;
     _cursubid = 0;
 
     local<regex_program> prg = new regex_program(icase);
     _prog = prg.ptr();
+
+    // every pattern byte produces at most two instructions (an operator such as | or ? creates
+    // two, a pair of parentheses two, an operand one), plus END; a class takes at least two bytes
+    prg->rinst.reserve(2 * s.len() + 1, false);
+    prg->rclass.reserve(s.len() / 2 + 1, false);
 
     // Start with a low priority operator to prime parser
     pushator(Reinst::OP(Reinst::START - 1));
