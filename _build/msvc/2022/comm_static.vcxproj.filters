@@ -58,6 +58,9 @@
     <Filter Include="containers">
       <UniqueIdentifier>{c5a69b67-cdd2-43ec-94f7-00a5d484ff91}</UniqueIdentifier>
     </Filter>
+    <Filter Include="system">
+      <UniqueIdentifier>{d83e06a2-d01e-487e-921f-e53213bfe017}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\atomic\atomic.h">
@@ -395,6 +398,15 @@
     <ClInclude Include="..\..\..\utils\uid.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\system\system_info.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\system\system_info_types.h">
+      <Filter>system</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\system\system_info_utils.h">
+      <Filter>system</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\containers\circular_queue.h">
       <Filter>containers</Filter>
     </ClInclude>
@@ -539,6 +551,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\utils\uid.cpp">
       <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\system\system_info.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\system\system_info_utils.cpp">
+      <Filter>system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\system\system_info_win.cpp">
+      <Filter>system</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

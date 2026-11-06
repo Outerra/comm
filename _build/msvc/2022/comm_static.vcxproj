@@ -604,6 +604,9 @@
     <ClInclude Include="..\..\..\typeseq.h" />
     <ClInclude Include="..\..\..\type_info.h" />
     <ClInclude Include="..\..\..\utils\uid.h" />
+    <ClInclude Include="..\..\..\system\system_info.h" />
+    <ClInclude Include="..\..\..\system\system_info_types.h" />
+    <ClInclude Include="..\..\..\system\system_info_utils.h" />
     <ClInclude Include="..\..\..\version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -798,6 +801,9 @@
     <ClCompile Include="..\..\..\regex\regcomp.cpp" />
     <ClCompile Include="..\..\..\regex\regexec.cpp" />
     <ClCompile Include="..\..\..\txtconv.cpp" />
+    <ClCompile Include="..\..\..\system\system_info.cpp" />
+    <ClCompile Include="..\..\..\system\system_info_utils.cpp" />
+    <ClCompile Include="..\..\..\system\system_info_win.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\doc\visualc-syntax\coid.natvis" />
