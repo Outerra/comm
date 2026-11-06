@@ -42,6 +42,7 @@
 #include "commtypes.h"
 
 #include "pthreadx.h"
+#include <atomic>
 #include <type_traits>
 #include <typeinfo>
 
@@ -56,9 +57,10 @@
 #define SINGLETON(...) \
     coid::singleton<__VA_ARGS__>::instance(true, std::source_location::current())
 
-///Retrieves process-wide global singleton object of given type T
+///Retrieves process-wide global singleton object of given type T - its module pointer apart from SINGLETON's (another
+/// instantiation of the class)
 #define PROCWIDE_SINGLETON(...) \
-    coid::singleton<__VA_ARGS__>::instance(false, std::source_location::current())
+    coid::singleton<__VA_ARGS__, "", 0, false>::instance(false, std::source_location::current())
 
 
 ///Used for function-local singleton objects, unique for each module (dll)
@@ -89,7 +91,7 @@
 #define THREAD_SINGLETON(...) \
     coid::thread_singleton<__VA_ARGS__>::instance(true)
 
-///Returns a procwide thread singleton instance
+///Returns a procwide thread singleton instance - the thread's own, the same in every module
 #define THREAD_PROCWIDE_SINGLETON(...) \
     coid::thread_singleton<__VA_ARGS__>::instance(false)
 
@@ -110,9 +112,9 @@
 #define LOCAL_SINGLETON(...) LOCAL_SINGLETON_DEF(__VA_ARGS__)
 
 
-///Evaluates to true if a singleton of given type exists
+///Evaluates to true if a singleton of given type exists - the module's SINGLETON or PROCWIDE_SINGLETON
 #define SINGLETON_EXISTS(...) \
-    (coid::singleton<__VA_ARGS__>::ptr() != 0)
+    (coid::singleton<__VA_ARGS__>::ptr() != 0 || coid::singleton<__VA_ARGS__, "", 0, false>::ptr() != 0)
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,11 +134,37 @@ void* singleton_register_instance(
     bool invisible,
     const char* unique_indentifier);
 
+///Registers a thread's object of a process-wide thread singleton in the process's registry - created at every
+/// registration, never found by a lookup: the process's thread key finds it
+void* singleton_register_thread_instance(
+    fn_singleton_creator create,
+    fn_singleton_destroyer destroy,
+    fn_singleton_initmod initmod,
+    const char* type,
+    int line,
+    const char* unique_indentifier);
+
 void singleton_unregister_instance(void*);
 
 void singletons_destroy();
 
 fn_singleton_creator singleton_local_creator(void* p);
+
+///Lock of the module's singleton registry, held by a SINGLETON's first call while it checks and registers the module's
+/// instance - the module's registry creates an object at every registration (recursive: the registration locks it again)
+class singleton_module_lock
+{
+public:
+    ///@param lock lock the module's registry; false for none (a PROCWIDE_SINGLETON's first call)
+    explicit singleton_module_lock(bool lock);
+    ~singleton_module_lock();
+
+    singleton_module_lock(const singleton_module_lock&) = delete;
+    singleton_module_lock& operator = (const singleton_module_lock&) = delete;
+
+private:
+    bool _locked;
+};
 
 
 ///This will run singleton_initialize_module() static method if T has one
@@ -214,27 +242,41 @@ public:
 
     /// @return global singleton, registering the place of birth
     /// @param module_local create a singleton that's local to the current module
+    /// @note Thread safe: concurrent first calls get one instance - SINGLETON's registered under the module registry's
+    ///  lock, PROCWIDE_SINGLETON's found by the process's registry under its lock, by its type alone (whichever line or
+    ///  module made the first call)
     static T& instance(bool module_local, const std::source_location& loc)
     {
-        T*& node = ptr();
+        std::atomic<T*>& node = ptr();
 
-        if (node)
-            return *node;
+        T* p = node.load(std::memory_order_acquire);
+        if (p)
+            return *p;
 
 #if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1700
         static_assert(std::is_default_constructible<T>::value, "type is not default constructible");
 #endif
 
-        node = (T*)singleton_register_instance(
+        //the module's registry creates an object at every registration: SINGLETON's first call checks again and registers
+        //under its lock; the process's registry finds the instance under its own lock - PROCWIDE_SINGLETON takes none here
+        singleton_module_lock lock(module_local);
+
+        p = node.load(std::memory_order_acquire);
+        if (p)
+            return *p;
+
+        p = (T*)singleton_register_instance(
             &create, &destroy, &init_module,
             typeid(T).name(), loc.file_name(), loc.line(), module_local, "");
 
-        return *node;
+        node.store(p, std::memory_order_release);
+        return *p;
     }
 
-    /// @return global singleton reference
-    static T*& ptr() {
-        static T* node = 0;
+    /// @return the module's pointer to the singleton - nullptr before the first call; SINGLETON's in singleton<T>,
+    ///  PROCWIDE_SINGLETON's in singleton<T, "", 0, false>
+    static std::atomic<T*>& ptr() {
+        static std::atomic<T*> node = nullptr;
         return node;
     }
 
@@ -248,16 +290,17 @@ public:
     }
 
     ///Local singleton constructor, use through LOCAL_SINGLETON macro
+    /// @param obj the singleton's object - deleted when the process's registry has the singleton (another module's)
     singleton(T* obj) {
         _p = (T*)singleton_register_instance(
             singleton_local_creator(obj), &destroy, &init_module,
             typeid(T).name(), "", Line, Module, Unique_identifier.value);
+
+        if (_p != obj)
+            delete obj;
     }
 
-    singleton(T&& obj) {
-        _p = (T*)singleton_register_instance(
-            singleton_local_creator(new T(std::forward<T>(obj))), &destroy, &init_module,
-            typeid(T).name(), "", Line, Module, Unique_identifier.value);
+    singleton(T&& obj) : singleton(new T(std::forward<T>(obj))) {
     }
 
     ~singleton() {
@@ -286,16 +329,27 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+///The thread key of THREAD_PROCWIDE_SINGLETON(T) - a process-wide singleton, so every module finds a thread's object by
+/// it (a TLS index is the process's)
+template<class T>
+struct thread_singleton_key
+{
+    thread_key key;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 ///Class for global and local thread singletons
 template<class T, detail::string_literal Function_signature = "", int Line = -1>
 class thread_singleton
 {
 public:
 
-    /// @return global thread singleton (always the same one from multiple places where used)
+    /// @return global thread singleton - the thread's object (always the same one from multiple places where used);
+    ///  THREAD_SINGLETON's the module's (its thread key), THREAD_PROCWIDE_SINGLETON's the same in every module (the
+    ///  process's thread key)
     static T& instance(bool module_local)
     {
-        thread_key& tk = get_key();
+        thread_key& tk = module_local ? get_key() : PROCWIDE_SINGLETON(thread_singleton_key<T>).key;
         return *thread_instance(tk, module_local, nullptr);
     }
 
@@ -321,21 +375,21 @@ private:
     static T* thread_instance(thread_key& tk, bool module_local, T* obj) {
         T* p = reinterpret_cast<T*>(tk.get());
         if (!p) {
-            p = (T*)singleton_register_instance(
-                obj==nullptr? &create : singleton_local_creator(obj),
-                &destroy,
-                &singleton<T>::init_module,
-                typeid(T).name(),
-                "",
-                Line,
-                module_local,
-                Function_signature.value);
+            fn_singleton_creator creator = obj == nullptr ? &create : singleton_local_creator(obj);
+
+            //the module's registry creates an object at every registration; the process's would find another thread's
+            //object by its type and line - a thread's object is registered there without a lookup, the key finds it
+            p = (T*)(module_local
+                ? singleton_register_instance(creator, &destroy, &singleton<T>::init_module,
+                    typeid(T).name(), "", Line, true, Function_signature.value)
+                : singleton_register_thread_instance(creator, &destroy, &singleton<T>::init_module,
+                    typeid(T).name(), Line, Function_signature.value));
             tk.set(p);
         }
         return p;
     }
 
-    /// @return global thread key
+    /// @return the module's thread key - THREAD_SINGLETON's
     static thread_key& get_key() {
         static thread_key _gtkey;
         return _gtkey;

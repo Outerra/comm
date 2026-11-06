@@ -98,7 +98,9 @@ class global_singleton_manager
 
 public:
 
-    global_singleton_manager() : mx(500, false)
+    //recursive: a singleton's constructor registers others under the lock, a SINGLETON's first call holds the module's
+    //registry's lock around its registration
+    global_singleton_manager() : mx(500, true)
     {
         last = 0;
         count = 0;
@@ -118,9 +120,16 @@ public:
         RASSERT(!shutting_down);
         comm_mutex_guard<_comm_mutex> mxg(mx);
 
-        //look for singletons registered in different modules
+        //look for singletons registered in different modules: a PROCWIDE_SINGLETON's registration finds one of its type,
+        //whichever line or module made the first call, a process-wide local singleton's one of its type, line and unique
+        //identifier (an older comm's thread singleton's too); the invisible registrations never look up - the module's
+        //registry creates an object at every registration, a process-wide thread singleton's thread has its own object
+        bool instance = is_instance_registration(file, unique_indentifier);
+
         killer* k = invisible ? 0 : last;
-        while (k && (k->invisible || k->type != type || line != k->line || strcmp(unique_indentifier, k->unique_indentifier) != 0))
+        while (k && (k->invisible || k->type != type || (instance
+            ? !is_instance_registration(k->file, k->unique_indentifier)
+            : line != k->line || strcmp(unique_indentifier, k->unique_indentifier) != 0)))
             k = k->next;
 
         if (!k) {
@@ -194,7 +203,18 @@ public:
     static global_singleton_manager& get_global();
     static global_singleton_manager& get_local();
 
+    ///Locks the registry - the module's one around a SINGLETON's first call (recursive: its registration locks it again)
+    void lock() { mx.lock(); }
+    void unlock() { mx.unlock(); }
+
 private:
+
+    ///Whether a registration is singleton::instance's (SINGLETON, PROCWIDE_SINGLETON): the only one with the caller's file
+    /// and without a unique identifier - local singletons have their function or file, thread singletons no file
+    static bool is_instance_registration(const char* file, const char* unique_indentifier) {
+        return file && *file && !(unique_indentifier && *unique_indentifier);
+    }
+
     _comm_mutex mx;
     killer* last;
 
@@ -225,9 +245,38 @@ void* singleton_register_instance(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void* singleton_register_thread_instance(
+    fn_singleton_creator fn_create,
+    fn_singleton_destroyer fn_destroy,
+    fn_singleton_initmod fn_initmod,
+    const char* type,
+    int line,
+    const char* unique_indentifier)
+{
+    //invisible in the process's registry: created at every registration, never found by a lookup
+    return global_singleton_manager::get_global().find_or_add_singleton(
+        fn_create, fn_destroy, fn_initmod,
+        type, "", line, true, unique_indentifier);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void singleton_unregister_instance(void* p)
 {
     global_singleton_manager::get_local().destroy_singleton(p);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+singleton_module_lock::singleton_module_lock(bool lock) : _locked(lock)
+{
+    if (_locked)
+        global_singleton_manager::get_local().lock();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+singleton_module_lock::~singleton_module_lock()
+{
+    if (_locked)
+        global_singleton_manager::get_local().unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -266,23 +315,27 @@ typedef global_singleton_manager* (*ireg_t)();
 
 global_singleton_manager& global_singleton_manager::get_global()
 {
-    static global_singleton_manager* _this = 0;
+    //concurrent first calls find the same registrar
+    static std::atomic<global_singleton_manager*> _this = nullptr;
 
-    if (!_this) {
+    global_singleton_manager* gsm = _this.load(std::memory_order_acquire);
+    if (!gsm) {
         //retrieve process-wide singleton from exported fn
         const char* s = MAKESTR(GLOBAL_SINGLETON_REGISTRAR);
         ireg_t p = (ireg_t)GetProcAddress(GetModuleHandleA(NULL), s);
         if (!p) {
             //entry point for global singleton not found in exe
             //probably a 3rd party exe
-            _this = GLOBAL_SINGLETON_REGISTRAR();
+            gsm = GLOBAL_SINGLETON_REGISTRAR();
         }
         else {
-            _this = p();
+            gsm = p();
         }
+
+        _this.store(gsm, std::memory_order_release);
     }
 
-    return *_this;
+    return *gsm;
 }
 
 #else

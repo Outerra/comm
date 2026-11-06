@@ -6,6 +6,8 @@
 #include "dir.h"
 #include "intergen/ifc.h"
 
+#include <atomic>
+
 
 COID_NAMESPACE_BEGIN
 
@@ -782,16 +784,19 @@ typedef interface_register_impl* (*ireg_t)();
 ////////////////////////////////////////////////////////////////////////////////
 interface_register_impl& interface_register_impl::get()
 {
-    static interface_register_impl* _this = 0;
+    //concurrent first calls find the same register
+    static std::atomic<interface_register_impl*> _this = nullptr;
 
-    if (!_this) {
+    interface_register_impl* reg = _this.load(std::memory_order_acquire);
+    if (!reg) {
         const char* s = MAKESTR(INTERGEN_GLOBAL_REGISTRAR);
         ireg_t p = (ireg_t)GetProcAddress(GetModuleHandleA(NULL), s);
         if (!p) throw exception() << "no intergen entry point found";
-        _this = p();
+        reg = p();
+        _this.store(reg, std::memory_order_release);
     }
 
-    return *_this;
+    return *reg;
 }
 
 
