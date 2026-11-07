@@ -27,7 +27,7 @@ void condition_variable::notify_all()
 
 void condition_variable::wait(_comm_mutex& mx)
 {
-    SleepConditionVariableCS(reinterpret_cast<CONDITION_VARIABLE*>(&_cv), reinterpret_cast<CRITICAL_SECTION*>(&mx), 0);
+    SleepConditionVariableCS(reinterpret_cast<CONDITION_VARIABLE*>(&_cv), reinterpret_cast<CRITICAL_SECTION*>(&mx), INFINITE);
 }
 
 bool condition_variable::wait_for(_comm_mutex& mx, uint ms)
