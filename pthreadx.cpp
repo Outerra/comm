@@ -100,6 +100,32 @@ void thread::set_affinity_mask(uint64 mask)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+bool thread::set_ideal_processor(uint16 group, uint8 number)
+{
+#ifdef SYSTYPE_WIN
+    PROCESSOR_NUMBER processor = {};
+    processor.Group = group;
+    processor.Number = number;
+    return SetThreadIdealProcessorEx(GetCurrentThread(), &processor, 0) != FALSE;
+#else
+    (void)group;
+    (void)number;
+    return false;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+bool thread::set_background_priority(bool background)
+{
+#ifdef SYSTYPE_WIN
+    return SetThreadPriority(GetCurrentThread(), background ? THREAD_PRIORITY_BELOW_NORMAL : THREAD_PRIORITY_NORMAL) != FALSE;
+#else
+    (void)background;
+    return false;
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
 thread thread::create_new_fn( const function<void*()>& fn, void* context, const token& name )
 {
     return SINGLETON(thread_manager).thread_create(fn, context, name);
@@ -190,6 +216,7 @@ void thread::join( thread_t tid )
     if (thread_handle != NULL)
     {
         WaitForSingleObject(thread_handle, INFINITE);
+        CloseHandle(thread_handle);
     }
 #else
     int result = pthread_join(tid);
