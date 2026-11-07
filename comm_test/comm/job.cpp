@@ -71,8 +71,8 @@ void test_job_queue()
         coidlog_info("a: " << a << ", b: " << (uints)b);
     };
 
-    task.push(coid::taskmaster::EPriority::LOW, nullptr, job1, 1, nullptr);
-    task.push_memberfn(coid::taskmaster::EPriority::LOW, nullptr, &jobtest::func, &jt, 2, nullptr);
+    task.push(coid::taskmaster::task_priority_enum::background, nullptr, job1, 1, nullptr);
+    task.push_memberfn(coid::taskmaster::task_priority_enum::background, nullptr, &jobtest::func, &jt, 2, nullptr);
 
     task.terminate(true);
 
