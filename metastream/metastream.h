@@ -446,7 +446,7 @@ public:
     bool member(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_stream_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*)&v;
             return true;
         }
 
@@ -465,7 +465,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_stream_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*)&v;
             used = true;
         }
         else if (_binr) {
@@ -492,7 +492,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == static_cast<const T&>(defval)
-                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -516,7 +516,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && (v.begin() == v.end())
-                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -877,7 +877,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            used = write_optional(write ? &v : nullptr);
+            used = write_optional(write ? (typename resolve_stream_enum<T>::type*)&v : nullptr);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1223,7 +1223,7 @@ public:
     bool nonmember(const token& name, T& v)
     {
         if (streaming()) {
-            *this || *(typename resolve_stream_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*)&v;
             return true;
         }
 
@@ -1242,7 +1242,7 @@ public:
         bool used = false;
 
         if (_binw) {
-            *this || *(typename resolve_stream_enum<T>::type*) & v;
+            *this || *(typename resolve_stream_enum<T>::type*)&v;
             used = true;
         }
         else if (_binr) {
@@ -1269,7 +1269,7 @@ public:
 
         if (_binw) {
             used = write_optional(!cache_prepared() && !write_default && v == defval
-                ? 0 : (typename resolve_stream_enum<T>::type*) & v);
+                ? 0 : (typename resolve_stream_enum<T>::type*)&v);
         }
         else if (_binr) {
             used = read_optional(v);
@@ -1483,7 +1483,7 @@ public:
     {
         opcd e = movein_process_key(READ_MODE);
         if (e == NOERR) {
-            *this || *(typename resolve_stream_enum<T>::type*) & val;
+            *this || *(typename resolve_stream_enum<T>::type*)&val;
             return true;
         }
         else {
@@ -4459,7 +4459,7 @@ struct has_metastream_operator {
 namespace check {
 
 template <typename X>
-concept has_enum_stream_op = std::is_enum_v<X> && requires(coid::metastream & m, X & x) {{ m || x } -> std::same_as<coid::metastream&>;};
+concept has_enum_stream_op = std::is_enum_v<X> && requires(coid::metastream& m, X& x) {{ m || x } -> std::same_as<coid::metastream&>;};
 
 } // namespace check
 
