@@ -535,6 +535,9 @@ void* taskmaster::threadfunc( int order )
     coidlog_debug(tmp << " running");
     profiler::set_thread_name(tmp);
 
+    // the debugger's name too - the thread manager's (SetThreadDescription)
+    thread::set_name(tmp);
+
     threadinfo*& idle = self.is_background ? _idle_background : _idle_frame;
 
     comm_mutex_guard<comm_mutex> lock(_sync);
