@@ -1727,5 +1727,33 @@
 		"versionid_inarg": "0x0008000000000000",
 		"has_inarg": true,
 		"call_event_with_default_body": false
+	},
+	{
+		"script_path": "callback_0.lua",
+		"int_result": 64,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "callback_1.lua",
+		"int_result": 30,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": false
+	},
+	{
+		"script_path": "callback_2.lua",
+		"int_result": 0,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": true
+	},
+	{
+		"script_path": "callback_3.lua",
+		"int_result": 0,
+		"script_class_name": "parent_class_ifc",
+		"call_event_with_default_body": false,
+		"should_throw": true
 	}
 ]

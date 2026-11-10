@@ -154,6 +154,14 @@ $-[method !static !destroy !internal !operator]$
     static void get_ffi_inject_$name$$@order$(coid::token& header, coid::token& body);
     static $return.type$ lua_$name$$@order$_ffi(void * ifc_this $-[args]$, $type$ $name$$size$$[/ args]$);
 $-[/method]$
+$-(if !callback.empty)$
+
+    // --- interface method callbacks ---
+
+$-[callback !internal]$
+    $return.type$ callback_$name$(lua_State* L, int fn_idx$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$;
+$-[/callback]$
+$-(/if)$
 $-(if !event.empty)$
 
     // --- interface events ---
@@ -229,7 +237,7 @@ __declspec(noinline) int $..name$_lua_dispatcher::lua_$name$$@order$_exc(lua_Sta
 
         lua_getfield(L, 1, ::lua::_lua_dispatcher_cptr_key);
 
-        ::lua::interface_wrapper_base<$..ns rest = "::"$::$..name$>* ifc = reinterpret_cast<::lua::interface_wrapper_base<$..ns rest = "::"$::$..name$>*>(
+        $..name$_lua_dispatcher* ifc = reinterpret_cast<$..name$_lua_dispatcher*>(
         *static_cast<size_t*>(lua_touserdata(L, -1)));
         lua_pop(L, 1);
 
@@ -250,29 +258,35 @@ $-[args ?inarg !nojs]$
 $-[/args]$
 
 $-[args ?inarg !nojs]$
+  $-(if ?callback)$
+        // lua function stays on the stack at index $@order$ + 2 for the duration of the call
+        if (!lua_isfunction(L, $@order$ + 2))
+            throw coid::exception("Argument '$name$' given to $....name$.$..name$ is not a function");
+
+        auto fn_$name$ = [&]($[callbackfn.args rest=", "]$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/callbackfn.args]$) -> $callbackfn.return.type$ { return ifc->callback_$..name$__$name$(L, $@order$ + 2$[callbackfn.args]$, $name$$[/callbackfn.args]$); };
+  $-(elif)$
         lua_pushvalue(L, $@order$ + 2);
 
-  $-(if ?callback)$
-        auto fn_$name$ = [&]($[callbackfn.args rest=", "]$$type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/callbackfn.args]$) -> $callbackfn.return.type$ { throw coid::exception() << "not implemented"; };
-  $-(elif !defval.empty ?ptr)$
+    $-(if !defval.empty ?ptr)$
         threadcached<$basetype$> $name$__tmp;
         $basetype$* $name$ = &$name$__tmp;
         if ($@order$ < args_count)
             from_lua($name$__tmp);
         else
             $name$ = $defval$;
-  $-(elif !defval.empty)$
+    $-(elif !defval.empty)$
         threadcached<$basetype$> $name$;
         if ($@order$ < args_count)
             from_lua($name$);
         else
             $name$ = $defval$;
-  $-(elif)$
+    $-(elif)$
         threadcached<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$> $name$;
         from_lua($name$);
-  $-(/if)$
+    $-(/if)$
 
         lua_pop(L, 1); // who pushes, must pop!
+  $-(/if)$
 $-[/args]$
 
         //out params
@@ -362,6 +376,186 @@ $return.type$ $..name$_lua_dispatcher::lua_$name$$@order$_ffi(void * ifc_this $-
 }
 */
 $-[/method]$
+$-[callback !internal]$
+////////////////////////////////////////////////////////////////////////////////
+$return.type$ $..name$_lua_dispatcher::callback_$name$(lua_State* L, int fn_idx$[args]$, $type$ $(if ?fnarg)$(*$name$)($fnargs$)$(elif)$$name$$(/if)$$size$$[/args]$) $-(if ?const)$ const$(/if)$
+{
+    THREAD_SINGLETON(coid::lua_streamer_context).set_context(_context.get());
+
+// check if metastream operator exists for non iref args
+$-[args ?inarg !iref]$
+    static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+$-[/args]$
+
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
+    const int stack_top = lua_gettop(L);
+#endif
+
+    lua_pushcfunction(L, &::lua::catch_lua_error); // push pcall error handler
+// stream in args and lua function for callback call
+    lua_pushvalue(L, fn_idx);
+
+    DASSERT(lua_isfunction(L, -1)); // check if callback is valid
+
+$-(if ?ninargs)$
+$-[args ?inarg]$
+  $-(if ?iref)$
+    if (!$name$.is_empty()) {
+        iref<::lua::registry_handle> $name$_handle = ::lua::wrap_interface($name$.get(), _context);
+        if ($name$_handle.is_empty()) {
+            lua_pushnil(L);
+        }
+        else {
+            $name$_handle->push_ref();
+        }
+    }
+    else {
+        lua_pushnil(L);
+    }
+  $-(elif)$
+    lua_streamer<$basetype$>::to_lua($name$); // TODO: volatile streamers
+  $-(/if)$
+$-[/args]$
+
+$-(/if)$
+$-(if ?return.type="void" !noutargs)$
+    constexpr uint nres = 0;
+$-(elif)$
+    constexpr uint nres = 1;
+$(/if)-$
+
+// call callback
+    int res = lua_pcall(L, $ninargs$, nres, -2-$ninargs$);
+
+    if (res != 0) {
+        lua_remove(L, -2); // pop pcall error handler
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
+        const int current_stack_top = lua_gettop(L);
+        DASSERT(current_stack_top == stack_top + 1); // +1 because error message is on the stack
+#endif
+
+        ::lua::throw_lua_error(L, "$..ns suffix="::"$lua::$..name$.$name$");
+    }
+
+// gather results
+    THREAD_SINGLETON(coid::lua_streamer_context).set_context(_context.get());
+
+$-(if !noutargs)$
+  $-(if !return.type="void")$
+    $-(if ?return.iref)$
+    $return.type$ _rval_;
+    $-(elif)$
+    static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
+    threadcached<$return.type$> _rval_;
+    $-(/if)$
+    try{
+        from_lua(_rval_);
+        lua_pop(L, 1); // pop return value
+    }
+    catch (const coid::exception& e)
+    {
+        lua_pop(L, 2); // pop return value and pcall error handler;
+        throw e;
+    }
+  $-(/if)$
+$-(elif)$
+  $-(if ?return.type="void" ?noutargs="1")$
+    $-(if !return.iref)$
+      $-[args ?outarg]$
+    static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+      $-[/args]$
+    $-(/if)$
+    try{
+    $-[args ?outarg]$
+    $-(if ?ptr)$
+        if ($name$)
+            from_lua(*$name$);
+    $-(elif)$
+        from_lua($name$);
+    $-(/if)$
+        lua_pop(L, 1); // pop return value
+    }
+    catch (const coid::exception& e)
+    {
+        lua_pop(L, 2); // out param value and pcall error handler;
+        throw e;
+    }
+    $-[/args]$
+  $-(elif)$
+    if (!lua_istable(L,-1))
+    {
+        lua_pop(L, 2); // out param value and pcall error handler;
+        throw ::lua::lua_event_exception("Multiple return values expected");
+    }
+
+    $-(if !return.type="void")$
+      $-(if ?return.iref)$
+    $return.type$ _rval_;
+      $-(elif)$
+    static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
+    threadcached<$return.type$> _rval_;
+      $-(/if)$
+    try
+    {
+        if(!lua_hasfield(L, -1, "_ret")) {
+            throw ::lua::lua_event_exception("Return value with name '_ret' not found in result table");
+        }
+        lua_getfield(L, -1, "_ret");
+        from_lua(_rval_);
+        lua_pop(L, 1); // pop '_ret' field
+
+    $-(elif)$
+    try
+    {
+    $-(/if)$
+    $-[args ?outarg !iref]$
+        static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
+    $-[/args]$
+    $-[args ?outarg rest="\n" first="\n"]$
+        // get and set "$name$" out param value
+        if(!lua_hasfield(L, -1, "$name$")) {
+            throw ::lua::lua_event_exception("Return value with name ""$name$"" not found in result table");
+        }
+        lua_getfield(L,-1,"$name$");
+      $-(if ?ptr)$
+        if ($name$)
+        {
+            from_lua(*$name$);
+            lua_pop(L, 1); // pop '"$name$"' field
+        }
+      $-(elif)$
+        from_lua($name$);
+        lua_pop(L, 1); // pop '"$name$"' field
+      $-(/if)$
+    $-[/args]$
+    }
+    catch (const ::lua::lua_event_exception& e)
+    {
+        lua_pop(L, 2); // pop from_lua value, out param value and pcall error handler;
+        throw e;
+    }
+    catch(const coid::exception& e)
+    {
+        lua_pop(L, 3); // pop out param value and pcall error handler;
+        throw e;
+    }
+
+    lua_pop(L, 1); // pop result table
+  $-(/if)$
+$-(/if)$
+
+    lua_pop(L, 1); // pop pcall error handler
+#if defined(_DEBUG) || defined(COID_DASSERT_LOG)
+    const int current_stack_top = lua_gettop(L);
+    DASSERT(current_stack_top == stack_top);
+#endif
+
+$-(if !return.type="void")$
+    return _rval_;
+$-(/if)$
+}
+
+$-[/callback]$
 $-[event]$
 ////////////////////////////////////////////////////////////////////////////////
 $return.type$ $..name$_lua_dispatcher::$name$($[args rest="," after=" "]$ $type$ $name$$size$$[/args]$) $-(if ?const)$ const$(/if)$

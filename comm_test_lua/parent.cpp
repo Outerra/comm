@@ -76,6 +76,25 @@ int a::b::parent_class::return_some_value_parent_multiret_2(int& out_arg1, int& 
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+int a::b::parent_class::enumerate_values(int count, const coid::callback<void(int, const coid::token&)>& fn)
+{
+    for (int k = 0; k < count; ++k)
+        fn(_some_value + k, "item");
+    return count;
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+int a::b::parent_class::accumulate_values(int count, const coid::callback<int(int acc, int v)>& fn)
+{
+    int acc = 0;
+    for (int v = 0; v < count; ++v)
+        acc = fn(acc, v);
+    return acc;
+}
+
+//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 a::b::parent_class::parent_class(int some_value, int some_ohter_value, int some_another_value)
     : _some_value(some_value)
     , _some_ohter_value(some_ohter_value)

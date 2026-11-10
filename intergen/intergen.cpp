@@ -758,6 +758,17 @@ int File::parse(token path, const char* ref_file, int ref_line)
                         base_methods[bi] = bm;
                         //base_methods[bi].fix_copy(bm);
                         base_methods[bi].binherit = true;
+
+                        //inherited methods need the callback wrappers too
+                        if (!bm.binternal)
+                        {
+                            for (const MethodIG::Arg& arg : bm.args)
+                            {
+                                if (!arg.callbackarg) continue;
+
+                                *i.callback.add() = *arg.callback;
+                            }
+                        }
                     }
                 }
 

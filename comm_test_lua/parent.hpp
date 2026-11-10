@@ -1,6 +1,7 @@
 #pragma once
 #include <intergen/ifc.h>
 #include <comm/ref_i.h>
+#include <comm/function.h>
 
 //ifc{
 #include "compound.h"
@@ -36,8 +37,10 @@ public: // interfaces only
     ifc_fn void return_some_value_parent_multiret_0(ifc_out int& out_arg0);
     ifc_fn int return_some_value_parent_multiret_1(ifc_out int& out_arg1);
     ifc_fn int return_some_value_parent_multiret_2(ifc_out int& out_arg1, ifc_out int& out_arg2);
+    ifc_fn int enumerate_values(int count, const coid::callback<void(int, const coid::token&)>& fn);
+    ifc_fn int accumulate_values(int count, const coid::callback<int(int acc, int v)>& fn);
 
-    
+
     ifc_event void some_event_default() ifc_default_body(return;);
     ifc_event void some_event();
 
@@ -68,7 +71,7 @@ public: // interfaces only
     ifc_event void some_event_string_retvoid_out2(ifc_inout coid::charstr& out_arg1, ifc_inout coid::charstr& out_arg2);
     ifc_event coid::charstr some_event_string_out1(ifc_inout coid::charstr& out_arg1);
     ifc_event coid::charstr some_event_string_out2(ifc_inout coid::charstr& out_arg1, ifc_inout coid::charstr& out_arg2);
-    
+
     ifc_event coid::dynarray<int> some_event_int_arr_default() ifc_default_body(return coid::dynarray<int>(););
     ifc_event coid::dynarray<int> some_event_int_arr();
     ifc_event void some_event_int_arr_retvoid_out1(ifc_inout coid::dynarray<int>& out_arg1);
