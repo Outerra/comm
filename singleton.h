@@ -58,9 +58,21 @@
     coid::singleton<__VA_ARGS__>::instance(true, std::source_location::current())
 
 ///Retrieves process-wide global singleton object of given type T - its module pointer apart from SINGLETON's (another
-/// instantiation of the class)
+/// instantiation of the class). A type without a default constructor has only PROCWIDE_SINGLETON_DEF's instance: found, a
+/// query before the definition a fatal assertion
 #define PROCWIDE_SINGLETON(...) \
     coid::singleton<__VA_ARGS__, "", 0, false>::instance(false, std::source_location::current())
+
+///Defines the process-wide singleton of given type - PROCWIDE_SINGLETON(class)'s instance in every module - by an object
+/// made with any of its constructors, assigned to it (a statement inside a function; the assignment returns the instance). A
+/// query before the definition creates the instance with the default constructor - for a type without one it's a fatal
+/// assertion -, so the definition comes first: an instance that exists already is kept - the definition refused (an
+/// assertion), its object deleted; the same definition run again too. The process's registry owns the instance like every
+/// singleton's object.
+/// usage:
+/// PROCWIDE_SINGLETON_DEF(class) = new class(args);
+#define PROCWIDE_SINGLETON_DEF(...) \
+    coid::singleton<__VA_ARGS__, "", 0, false>::definition(std::source_location::current())
 
 
 ///Used for function-local singleton objects, unique for each module (dll)
@@ -112,9 +124,15 @@
 #define LOCAL_SINGLETON(...) LOCAL_SINGLETON_DEF(__VA_ARGS__)
 
 
-///Evaluates to true if a singleton of given type exists - the module's SINGLETON or PROCWIDE_SINGLETON
+///Evaluates to true if a singleton of given type exists - the module's SINGLETON or PROCWIDE_SINGLETON (the module's
+/// pointers: PROCWIDE_SINGLETON_EXISTS asks the process's registry)
 #define SINGLETON_EXISTS(...) \
     (coid::singleton<__VA_ARGS__>::ptr() != 0 || coid::singleton<__VA_ARGS__, "", 0, false>::ptr() != 0)
+
+///Evaluates to true if the process-wide singleton of given type exists - PROCWIDE_SINGLETON's instance, made by any
+/// module's query or definition (PROCWIDE_SINGLETON_DEF): the process's registry asked, nothing created
+#define PROCWIDE_SINGLETON_EXISTS(...) \
+    coid::singleton<__VA_ARGS__, "", 0, false>::exists()
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,6 +161,24 @@ void* singleton_register_thread_instance(
     const char* type,
     int line,
     const char* unique_indentifier);
+
+///Finds the instance of a type in the process's registry - a PROCWIDE_SINGLETON's (its query's or its definition's), by its
+/// type alone; nothing created
+/// @param initmod the module's initialization of the instance found - as a registration that finds an instance calls it
+///  (PROCWIDE_SINGLETON's query of a type without a default constructor); nullptr for none (PROCWIDE_SINGLETON_EXISTS)
+/// @return the instance, nullptr when there's none
+void* singleton_find_instance(const char* type, fn_singleton_initmod initmod);
+
+///Checks PROCWIDE_SINGLETON's query of a type without a default constructor - its instance only PROCWIDE_SINGLETON_DEF's: a
+/// query before the definition is a fatal assertion (a break in Debug, an error logged, the process aborted - the query has
+/// no object to return)
+/// @param found whether the process's registry has the instance
+void singleton_check_query(bool found, const char* type);
+
+///Checks a process-wide singleton's definition (PROCWIDE_SINGLETON_DEF): refused when its instance exists already - an
+/// assertion (a break in Debug, an error logged in every configuration)
+/// @param defined whether the definition's object is the instance
+void singleton_check_definition(bool defined, const char* type);
 
 void singleton_unregister_instance(void*);
 
@@ -245,6 +281,8 @@ public:
     /// @note Thread safe: concurrent first calls get one instance - SINGLETON's registered under the module registry's
     ///  lock, PROCWIDE_SINGLETON's found by the process's registry under its lock, by its type alone (whichever line or
     ///  module made the first call)
+    /// @note A type without a default constructor: PROCWIDE_SINGLETON only finds PROCWIDE_SINGLETON_DEF's instance (any
+    ///  module's) - a query before the definition is a fatal assertion; SINGLETON doesn't compile
     static T& instance(bool module_local, const std::source_location& loc)
     {
         std::atomic<T*>& node = ptr();
@@ -253,28 +291,68 @@ public:
         if (p)
             return *p;
 
-#if !defined(SYSTYPE_MSVC) || SYSTYPE_MSVC >= 1700
-        static_assert(std::is_default_constructible<T>::value, "type is not default constructible");
-#endif
+        if constexpr (!std::is_default_constructible<T>::value)
+        {
+            //only a definition makes the instance of a type without a default constructor: PROCWIDE_SINGLETON finds it
+            static_assert(is_procwide_instance, "type is not default constructible");
+            return *find_defined_instance();
+        }
+        else
+        {
+            //the module's registry creates an object at every registration: SINGLETON's first call checks again and
+            //registers under its lock; the process's registry finds the instance under its own lock - PROCWIDE_SINGLETON
+            //takes none here
+            singleton_module_lock lock(module_local);
 
-        //the module's registry creates an object at every registration: SINGLETON's first call checks again and registers
-        //under its lock; the process's registry finds the instance under its own lock - PROCWIDE_SINGLETON takes none here
-        singleton_module_lock lock(module_local);
+            p = node.load(std::memory_order_acquire);
+            if (p)
+                return *p;
 
-        p = node.load(std::memory_order_acquire);
-        if (p)
+            p = (T*)singleton_register_instance(
+                &create, &destroy, &init_module,
+                typeid(T).name(), loc.file_name(), loc.line(), module_local, "");
+
+            node.store(p, std::memory_order_release);
             return *p;
+        }
+    }
 
-        p = (T*)singleton_register_instance(
-            &create, &destroy, &init_module,
-            typeid(T).name(), loc.file_name(), loc.line(), module_local, "");
+    ///PROCWIDE_SINGLETON_DEF's definition - an object assigned to it defines the process's instance of T
+    class procwide_definition
+    {
+    public:
+        explicit procwide_definition(const std::source_location& loc) : _loc(loc) {}
 
-        node.store(p, std::memory_order_release);
-        return *p;
+        /// @param obj the instance, made by new with any of T's constructors - the process's registry's then, like every
+        ///  singleton's object
+        /// @return the process's instance: obj; an instance that exists already (a query's, another definition's, of any
+        ///  module) is kept - the definition refused (an assertion), obj deleted
+        T& operator = (T* obj) const {
+            return *define_instance(obj, _loc);
+        }
+
+    private:
+        std::source_location _loc;          //< the definition's place - its registration's file and line
+    };
+
+    /// @return PROCWIDE_SINGLETON_DEF's definition at loc - an object assigned to it defines the process's instance of T
+    [[nodiscard]] static procwide_definition definition(const std::source_location& loc) {
+        static_assert(is_procwide_instance, "PROCWIDE_SINGLETON_DEF defines PROCWIDE_SINGLETON's instance");
+        return procwide_definition(loc);
+    }
+
+    /// @return true when the process's instance of T exists - PROCWIDE_SINGLETON_EXISTS's: made by any module's query or
+    ///  definition (the process's registry asked while the module's pointer is empty); nothing created
+    static bool exists()
+    {
+        static_assert(is_procwide_instance, "PROCWIDE_SINGLETON_EXISTS checks PROCWIDE_SINGLETON's instance");
+
+        return ptr().load(std::memory_order_acquire) != nullptr
+            || singleton_find_instance(typeid(T).name(), nullptr) != nullptr;
     }
 
     /// @return the module's pointer to the singleton - nullptr before the first call; SINGLETON's in singleton<T>,
-    ///  PROCWIDE_SINGLETON's in singleton<T, "", 0, false>
+    ///  PROCWIDE_SINGLETON's and PROCWIDE_SINGLETON_DEF's in singleton<T, "", 0, false>
     static std::atomic<T*>& ptr() {
         static std::atomic<T*> node = nullptr;
         return node;
@@ -316,7 +394,44 @@ public:
 
 private:
 
+    ///Whether this is PROCWIDE_SINGLETON's instantiation (singleton<T, "", 0, false>) - PROCWIDE_SINGLETON_DEF's and
+    /// PROCWIDE_SINGLETON_EXISTS's
+    static constexpr bool is_procwide_instance = !Module && Line == 0 && Unique_identifier.value[0] == 0;
+
     T* _p = 0;
+
+    ///PROCWIDE_SINGLETON_DEF's definition: obj registered in the process's registry as a first PROCWIDE_SINGLETON(T) call
+    /// registers its instance - found by its type alone from every line and module
+    /// @return the process's instance: obj; an instance that exists already (a query's, another definition's, of any
+    ///  module) is kept - the definition refused (an assertion), obj deleted
+    static T* define_instance(T* obj, const std::source_location& loc)
+    {
+        //the registration's creator gives obj: the process's registry takes it as the instance unless it has one - that
+        //one initialized for this module
+        T* p = (T*)singleton_register_instance(
+            singleton_local_creator(obj), &destroy, &init_module,
+            typeid(T).name(), loc.file_name(), loc.line(), false, "");
+
+        singleton_check_definition(p == obj, typeid(T).name());
+        if (p != obj)
+            delete obj;
+
+        ptr().store(p, std::memory_order_release);
+        return p;
+    }
+
+    ///PROCWIDE_SINGLETON's query of a type without a default constructor: PROCWIDE_SINGLETON_DEF's instance, found in the
+    /// process's registry by its type alone (any module's definition) and initialized for this module as a registration
+    /// that finds an instance initializes it
+    /// @return the instance - a query before the definition is a fatal assertion (the query has no object to return)
+    static T* find_defined_instance()
+    {
+        T* p = (T*)singleton_find_instance(typeid(T).name(), &init_module);
+        singleton_check_query(p != nullptr, typeid(T).name());
+
+        ptr().store(p, std::memory_order_release);
+        return p;
+    }
 
     static void destroy(void* p) {
         delete (T*)p;

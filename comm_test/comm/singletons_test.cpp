@@ -207,6 +207,16 @@ void test_thread_local_singleton_defs()
     THREAD_PROCWIDE_SINGLETON gives each thread its own object, the same in every module (the process's thread key); a
     process-wide local singleton of two modules is one instance - the second module's object deleted.
 
+    PROCWIDE_SINGLETON_DEF defines the process's instance by an object made with any constructor - every query's and module's
+    instance, like a first call's; refused when the instance exists already (a query's, another definition's, another
+    module's): the instance kept, the definition's object deleted, an assertion - its break turned off while the refusals are
+    made. The definition is an assignment returning the instance; run again, it's refused like another definition. A type
+    without a default constructor has only a definition's instance: PROCWIDE_SINGLETON finds it - this module's
+    definition's, another module's, initialized for the module once (the module's pointer kept); a query before the
+    definition is a fatal assertion, which aborts the process - not tested here.
+    PROCWIDE_SINGLETON_EXISTS asks the process's registry: nothing created, another module's instance seen, the type's other
+    keys not the instance.
+
     The concurrent tests release their threads together at a type whose construction takes 50 ms, so every thread makes
     its first call before the first construction ends. Each test has types of its own - a type's first call happens once
     in a process. Like ref_tests, these assert with RASSERT, which is live in every configuration.
@@ -245,12 +255,47 @@ struct counted_object
     ~counted_object() { destroyed.fetch_add(1); }
 };
 
+///A process-wide singleton's type a definition makes with its value - a query with the default constructor, the value 0 -,
+/// counting its constructions and destructions; Tag gives each test its own types
+template <int Tag>
+struct defined_singleton
+{
+    static inline std::atomic<int> constructed = 0;
+    static inline std::atomic<int> destroyed = 0;
+
+    int value = 0;
+
+    defined_singleton() { constructed.fetch_add(1); }
+    explicit defined_singleton(int v) : value(v) { constructed.fetch_add(1); }
+    ~defined_singleton() { destroyed.fetch_add(1); }
+};
+
+///A process-wide singleton's type without a default constructor - its instance only a definition's -, counting its
+/// constructions, destructions and module initializations (singleton_initialize_module: a module that finds the
+/// instance); Tag gives each test its own types
+template <int Tag>
+struct defined_only_singleton
+{
+    static inline std::atomic<int> constructed = 0;
+    static inline std::atomic<int> destroyed = 0;
+    static inline std::atomic<int> modules_initialized = 0;
+
+    int value;
+
+    explicit defined_only_singleton(int v) : value(v) { constructed.fetch_add(1); }
+    ~defined_only_singleton() { destroyed.fetch_add(1); }
+
+    void singleton_initialize_module() { modules_initialized.fetch_add(1); }
+};
+
 } //namespace singleton_test_types
 
 namespace {
 
 using singleton_test_types::counted_singleton;
 using singleton_test_types::counted_object;
+using singleton_test_types::defined_singleton;
+using singleton_test_types::defined_only_singleton;
 
 constexpr int construction_ms = 50;
 constexpr int thread_count = 8;
@@ -291,6 +336,16 @@ void* register_procwide_in_another_module()
 {
     return coid::singleton_register_instance(
         []() -> void* { return new T; }, [](void* p) { delete static_cast<T*>(p); }, &coid::singleton<T>::init_module,
+        typeid(T).name(), "another_module.cpp", 4321, false, "");
+}
+
+///Registers obj in the process's registry as another module's PROCWIDE_SINGLETON_DEF(T) does - from another file and line
+/// @return the process's instance
+template <class T>
+void* define_procwide_in_another_module(T* obj)
+{
+    return coid::singleton_register_instance(
+        coid::singleton_local_creator(obj), [](void* p) { delete static_cast<T*>(p); }, &coid::singleton<T>::init_module,
         typeid(T).name(), "another_module.cpp", 4321, false, "");
 }
 
@@ -526,6 +581,119 @@ void local_procwide_singleton_of_two_modules()
     }
 }
 
+///A definition: its object PROCWIDE_SINGLETON's instance - the assignment's result, this module's query's, another module's
+/// (its registration from another file and line, found by its type alone) -, nothing else created
+void procwide_singleton_definition()
+{
+    using type = defined_singleton<20>;
+
+    type& defined = PROCWIDE_SINGLETON_DEF(type) = new type(42);
+    void* there = register_procwide_in_another_module<type>();
+
+    RASSERT(defined.value == 42);
+    RASSERT(&PROCWIDE_SINGLETON(type) == &defined && there == &defined);
+    RASSERT(type::constructed == 1 && type::destroyed == 0);
+}
+
+///A definition refused - the instance exists already: a query's, another definition's, another module's, the same
+/// definition's run before; the instance kept, the definition's object deleted
+void procwide_singleton_definition_refused()
+{
+    using queried_first = defined_singleton<21>;
+    using defined_twice = defined_singleton<22>;
+    using another_module_first = defined_singleton<23>;
+    using run_twice = defined_singleton<26>;
+
+    queried_first& queried = PROCWIDE_SINGLETON(queried_first);
+    defined_twice& first = PROCWIDE_SINGLETON_DEF(defined_twice) = new defined_twice(1);
+    void* there = register_procwide_in_another_module<another_module_first>();
+
+    //the refusals' assertions - their breaks off while they're made
+    coid::enable_dassert_debugbreak(false);
+    queried_first& defined_after_query = PROCWIDE_SINGLETON_DEF(queried_first) = new queried_first(42);
+    defined_twice& second = PROCWIDE_SINGLETON_DEF(defined_twice) = new defined_twice(2);
+    another_module_first& defined_after_module = PROCWIDE_SINGLETON_DEF(another_module_first) = new another_module_first(42);
+    run_twice* runs[2] = {};
+    for (int run = 0; run < 2; ++run)
+        runs[run] = &(PROCWIDE_SINGLETON_DEF(run_twice) = new run_twice(run + 1));
+    coid::enable_dassert_debugbreak(true);
+
+    RASSERT(&defined_after_query == &queried && queried.value == 0);
+    RASSERT(queried_first::constructed == 2 && queried_first::destroyed == 1);
+    RASSERT(&second == &first && first.value == 1);
+    RASSERT(defined_twice::constructed == 2 && defined_twice::destroyed == 1);
+    RASSERT(&defined_after_module == there && defined_after_module.value == 0);
+    RASSERT(another_module_first::constructed == 2 && another_module_first::destroyed == 1);
+    RASSERT(runs[0] == runs[1] && runs[0]->value == 1);
+    RASSERT(run_twice::constructed == 2 && run_twice::destroyed == 1);
+}
+
+///A type without a default constructor: PROCWIDE_SINGLETON finds a definition's instance - this module's definition's,
+/// another module's (registered from another file and line) initialized for this module once while queried twice (the
+/// module's pointer kept) -, nothing else created; PROCWIDE_SINGLETON_EXISTS false before the definition
+void procwide_singleton_query_without_default_constructor()
+{
+    {
+        using type = defined_only_singleton<27>;
+
+        RASSERT(!PROCWIDE_SINGLETON_EXISTS(type));
+        type& defined = PROCWIDE_SINGLETON_DEF(type) = new type(42);
+
+        RASSERT(PROCWIDE_SINGLETON_EXISTS(type));
+        RASSERT(&PROCWIDE_SINGLETON(type) == &defined && defined.value == 42);
+        RASSERT(type::constructed == 1 && type::destroyed == 0 && type::modules_initialized == 0);
+    }
+    {
+        using type = defined_only_singleton<28>;
+
+        type* there = new type(7);
+        void* registered = define_procwide_in_another_module(there);
+        RASSERT(registered == there);
+
+        type& queried = PROCWIDE_SINGLETON(type);
+        type& queried_again = PROCWIDE_SINGLETON(type);
+
+        RASSERT(&queried == there && &queried_again == there && queried.value == 7);
+        RASSERT(type::constructed == 1 && type::destroyed == 0 && type::modules_initialized == 1);
+    }
+}
+
+using exists_key_type = defined_singleton<25>;
+
+void* local_procwide_singleton_of_exists_key()
+{
+    LOCAL_FUNCTION_PROCWIDE_SINGLETON_DEF(exists_key_type) instance;
+    return instance.get();
+}
+
+///PROCWIDE_SINGLETON_EXISTS: the process's registry asked - nothing created, another module's instance seen while this
+/// module's pointers are empty (SINGLETON_EXISTS reads them only); the type's other keys - a process-wide local singleton,
+/// the module's SINGLETON, a process-wide thread singleton (an older comm's too) - not the instance
+void procwide_singleton_exists()
+{
+    {
+        using type = defined_singleton<24>;
+
+        RASSERT(!PROCWIDE_SINGLETON_EXISTS(type));
+        RASSERT(type::constructed == 0);
+
+        register_procwide_in_another_module<type>();
+        RASSERT(PROCWIDE_SINGLETON_EXISTS(type) && !SINGLETON_EXISTS(type));
+        RASSERT(type::constructed == 1);
+    }
+    {
+        using type = exists_key_type;
+
+        local_procwide_singleton_of_exists_key();
+        SINGLETON(type);
+        THREAD_PROCWIDE_SINGLETON(type);
+        register_thread_in_older_module<type>();
+
+        RASSERT(!PROCWIDE_SINGLETON_EXISTS(type));
+        RASSERT(type::constructed == 4);
+    }
+}
+
 } //namespace
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -548,4 +716,8 @@ void singleton_test()
     thread_procwide_singleton_per_thread();
     thread_procwide_singleton_of_another_module();
     local_procwide_singleton_of_two_modules();
+    procwide_singleton_definition();
+    procwide_singleton_definition_refused();
+    procwide_singleton_query_without_default_constructor();
+    procwide_singleton_exists();
 }
