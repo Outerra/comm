@@ -387,6 +387,7 @@
       <Filter>coder</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\range.h" />
+    <ClInclude Include="..\..\..\bitfield.h" />
     <ClInclude Include="..\..\..\bitrange.h" />
     <ClInclude Include="..\..\..\taskmaster.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">

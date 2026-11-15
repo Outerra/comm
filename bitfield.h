@@ -83,6 +83,11 @@ protected: // inner definitions only
 
     static constexpr uints byte_size = word_size * word_count;
 
+    /// @brief The last word's bits below bit_size - the ones past it are never set
+    static constexpr word_type last_word_mask = (bit_size & word_bit_index_mask) == 0
+        ? word_type(-1)
+        : word_type((word_type(1) << (bit_size & word_bit_index_mask)) - 1);
+
 public: // methods only
 
     /// @brief Get set bit count
@@ -155,15 +160,18 @@ public: // methods only
             const bit_index_uint_type word_bit_index = next_bit_index & word_bit_index_mask;
             word_type word = _bits[word_index] & (static_cast<word_type>(-1) << word_bit_index);
 
-            do
+            // the next words - none read past the last one
+            while (word == 0)
             {
-                if (word != 0)
+                if (++word_index == word_count)
                 {
-                    return bit_index_type((word_index << bit_index_to_word_index_shift) + lsb_bit_set(word));
+                    return invalid_bit_index;
                 }
 
-                word = _bits[++word_index];
-            } while (word_index < word_count);
+                word = _bits[word_index];
+            }
+
+            return bit_index_type((word_index << bit_index_to_word_index_shift) + lsb_bit_set(word));
         }
 
         return invalid_bit_index;
@@ -188,16 +196,19 @@ public: // methods only
         {
             const uint32 word_bit_index = next_bit_index & word_bit_index_mask;
             word_type word = _bits[word_index] & (static_cast<word_type>(-1) >> (word_bit_size - word_bit_index - 1));
-            
-            do
+
+            // the previous words - none read before the first one
+            while (word == 0)
             {
-                if (word != 0)
+                if (word_index == 0)
                 {
-                    return bit_index_type((word_index << bit_index_to_word_index_shift) + msb_bit_set(word));
+                    return invalid_bit_index;
                 }
 
                 word = _bits[--word_index];
-            } while (word_index < word_count);
+            }
+
+            return bit_index_type((word_index << bit_index_to_word_index_shift) + msb_bit_set(word));
         }
 
         return invalid_bit_index;
@@ -255,10 +266,11 @@ public: // methods only
         memset(_bits, 0, sizeof(_bits));
     }
 
-    /// @brief Sets all bits to 1
+    /// @brief Sets all bits to 1 - the ones past bit_size stay 0
     void set_all_bits()
     {
         memset(_bits, 0xff, sizeof(_bits));
+        _bits[word_count - 1] &= last_word_mask;
     }
 
     /// @brief Flips the bit value of the bit on provided index
@@ -361,7 +373,7 @@ public: // methods only
     }
 
     /// @brief 	Unary complement operator
-    /// @return Bit inverted bitfield
+    /// @return Bit inverted bitfield - the bits past bit_size stay 0
     bitfield operator~() const
     {
         bitfield result;
@@ -370,7 +382,32 @@ public: // methods only
             result._bits[i] = ~_bits[i];
         }
 
+        result._bits[word_count - 1] &= last_word_mask;
         return result;
+    }
+
+    /// @brief Checks whether two bitfields have the same bits set
+    /// @param rhs - bitfield to compare with
+    /// @return True when every bit is the same
+    bool operator==(const bitfield& rhs) const
+    {
+        for (uint32 i = 0; i < word_count; ++i)
+        {
+            if (_bits[i] != rhs._bits[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// @brief Checks whether two bitfields differ in a bit
+    /// @param rhs - bitfield to compare with
+    /// @return True when a bit differs
+    bool operator!=(const bitfield& rhs) const
+    {
+        return !(*this == rhs);
     }
 
     /// @brief Check if if the bit on the bit index is set
@@ -386,6 +423,7 @@ public: // methods only
         DASSERT_RETX(bytes.byte_size() == byte_size, "Invalid byte size");
 
         memcpy(_bits, bytes.ptr(), byte_size);
+        _bits[word_count - 1] &= last_word_mask;
     }
 
     bitfield(std::initializer_list<bit_index_type> bits_to_set)
