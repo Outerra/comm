@@ -414,7 +414,7 @@ public:
     template <class T>
     static const data_ifc_descriptor* get_type_ifc(uint64 hash) {
         ifcman& m = get();
-        uint id = m._seq.type_id<T>();
+        uint id = m._seq.get_type_id<T>();
         return id < m._clients.size() && m._clients[id]._hash == hash ? &m._clients[id] : nullptr;
     }
 
@@ -424,7 +424,7 @@ public:
     template <class T>
     static const data_ifc_descriptor* get_type_ifc() {
         ifcman& m = get();
-        uint id = m._seq.type_id<T>();
+        uint id = m._seq.get_type_id<T>();
         return id < m._clients.size() ? &m._clients[id] : nullptr;
     }
 

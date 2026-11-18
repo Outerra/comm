@@ -60,7 +60,7 @@ public:
     T*& component(int* pid = 0)
     {
         type_sequencer<OwnT>& sq = tsq();
-        int id = sq.type_id<T>();
+        int id = sq.get_type_id<T>();
         if (pid)
             *pid = id;
         void*& ctx = _components.get_or_addc(id);
@@ -73,7 +73,7 @@ public:
     const T* component(int* pid = 0) const
     {
         type_sequencer<OwnT>& sq = tsq();
-        int id = sq.type_id<T>();
+        int id = sq.get_type_id<T>();
         if (pid)
             *pid = id;
         void* const& ctx = _components.get_safe(id, nullptr);
@@ -84,7 +84,7 @@ public:
     template <class T>
     int component_id() {
         type_sequencer<OwnT>& sq = tsq();
-        return sq.type_id<T>();
+        return sq.get_type_id<T>();
     }
 
     void* component_data(int cid) const {
@@ -474,7 +474,7 @@ public:
     template <class C>
     static int get_container_id()
     {
-        return tsq().type_id<C>();
+        return tsq().get_type_id<C>();
     }
 
 
@@ -949,7 +949,7 @@ public:
             }
             else {
                 if (default_fn) {
-                    auto td = tsq().type(i);
+                    auto td = tsq().get_type(i);
                     default_fn(td->type_name);
                 }
             }
@@ -973,7 +973,7 @@ public:
             void* d = get_data(vid, i);
             bool has_component = d != nullptr;
 
-            auto td = tsq().type(i);
+            auto td = tsq().get_type(i);
             if (fn(td->type_name, has_component))
                 c->create_default(vid.id32());
         }
@@ -984,7 +984,7 @@ private:
     template <class C>
     static container* get_container()
     {
-        static uint cid = tsq().type_id<C>();
+        static uint cid = tsq().get_type_id<C>();
         dynarray32<container*>& co = data_containers();
         return cid < co.size() ? co[cid] : nullptr;
     }
@@ -1002,7 +1002,7 @@ private:
     template <class C, class DefaultContainer = cshash<C>>
     static container& get_or_create_container()
     {
-        static uint cid = tsq().type_id<C>();
+        static uint cid = tsq().get_type_id<C>();
         dynarray32<container*>& co = data_containers();
         if constexpr (DefaultContainer::specific_type != container::type::hash) {
             //mismatch between previously created container type
