@@ -466,6 +466,7 @@
     <ClInclude Include="txtconv.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="range.h" />
+    <ClInclude Include="bitfield.h" />
     <ClInclude Include="bitrange.h" />
     <ClInclude Include="sync\queue.h">
       <Filter>sync</Filter>

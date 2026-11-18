@@ -200,6 +200,26 @@ public:
         //destroy();
     }
 
+    ///Finds an instance registration of the type - a PROCWIDE_SINGLETON's (its query's or its definition's), by its type
+    /// alone; nothing created. The last virtual function: the others keep their places, a module of an older comm calls
+    /// them on the process's registry
+    /// @param initmod the module's initialization of the object found (a registration that finds an instance calls it),
+    ///  nullptr for none
+    /// @return its object, nullptr when there's none
+    virtual void* find_singleton(const token& type, fn_singleton_initmod initmod)
+    {
+        comm_mutex_guard<_comm_mutex> mxg(mx);
+
+        for (killer* k = last; k; k = k->next)
+            if (!k->invisible && k->type == type && is_instance_registration(k->file, k->unique_indentifier)) {
+                if (initmod)
+                    initmod(k->ptr);
+                return k->ptr;
+            }
+
+        return nullptr;
+    }
+
     static global_singleton_manager& get_global();
     static global_singleton_manager& get_local();
 
@@ -257,6 +277,25 @@ void* singleton_register_thread_instance(
     return global_singleton_manager::get_global().find_or_add_singleton(
         fn_create, fn_destroy, fn_initmod,
         type, "", line, true, unique_indentifier);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void* singleton_find_instance(const char* type, fn_singleton_initmod initmod)
+{
+    return global_singleton_manager::get_global().find_singleton(type, initmod);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void singleton_check_definition(bool defined, const char* type)
+{
+    LASSERTX(defined, "the process-wide singleton of '" << type << "' exists already - its definition refused, its object deleted");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void singleton_check_query(bool found, const char* type)
+{
+    RASSERT_FATALX(found, "the process-wide singleton of '" << type << "' queried before its definition - a type without a "
+        "default constructor has only PROCWIDE_SINGLETON_DEF's instance");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

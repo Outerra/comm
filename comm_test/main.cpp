@@ -342,10 +342,12 @@ void logger_tests();
 void roundbuffer_tests();
 void circular_queue_tests();
 void slotalloc_tests();
+void bitfield_tests();
 
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char* argv[] )
 {
+    bitfield_tests();
     ref_tests();
     regex_tests();
     atomic_stack_tests();

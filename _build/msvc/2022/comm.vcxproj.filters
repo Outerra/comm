@@ -398,6 +398,7 @@
     <ClInclude Include="..\..\..\log\logwriter.h">
       <Filter>log</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\bitfield.h" />
     <ClInclude Include="..\..\..\bitrange.h" />
     <ClInclude Include="..\..\..\alloc\slotalloc_tracker.h">
       <Filter>alloc</Filter>
