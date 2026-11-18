@@ -79,6 +79,10 @@ void memtrack_tests()
         RASSERT(find_probe_entry(after));
         RASSERT(after.ncurallocs == current_before);
         RASSERT(after.nlifeallocs == lifetime_before + thread_count * per_thread);
+
+        // the entry's name its own - a copy, not the allocating module's text (that module's unload leaves it)
+        const coid::token probe_name = coid::type_info::get<memtrack_probe>().name;
+        RASSERT(after.name == probe_name && after.name.ptr() != probe_name.ptr());
     }
 
     coid::memtrack_enable(was_enabled);

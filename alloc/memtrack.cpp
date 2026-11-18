@@ -112,7 +112,16 @@ struct memtrack_key_hasher
 
 };
 
-typedef hash_keyset<memtrack, memtrack_key_extractor, memtrack_key_hasher>
+/// @brief An entry of the tracker - one type's record (memtrack - what memtrack_list hands out, its layout the
+/// modules' built with it) and the type's name, a copy of its own: the record's name a token of it, set by the entry's
+/// first allocation - the unload of the module that allocated the type leaves it valid (dump, list's records and the
+/// stack trace records read it); an entry never moves (the hash table's nodes) and is never removed
+struct memtrack_entry : memtrack
+{
+    charstr name_text;                  //< the type's name - a copy of its first allocation's (the record's name)
+};
+
+typedef hash_keyset<memtrack_entry, memtrack_key_extractor, memtrack_key_hasher>
 memtrack_hash_t;
 
 ///
@@ -266,12 +275,16 @@ public:
 
         GUARDTHIS(*mux);
         inside_alloc_in_progress = true;
-        memtrack* val = hash->find_or_insert_value_slot(
-            tracking != nullptr ? tracking->hash : unknown_hash
-        );
-
-        val->name = tracking != nullptr ? tracking->name : unknown;
-        val->hash = tracking != nullptr ? tracking->hash : unknown_hash;
+        const uint64 type_hash = tracking != nullptr ? tracking->hash : unknown_hash;
+        bool is_new = false;
+        memtrack_entry* val = hash->find_or_insert_value_slot(type_hash, &is_new);
+        if (is_new) {
+            // the entry's own copy of the name - the allocating module's text goes with its unload; its allocation
+            // not tracked (inside_alloc_in_progress)
+            val->hash = type_hash;
+            val->name_text = tracking != nullptr ? tracking->name : unknown;
+            val->name = val->name_text;
+        }
 
         ++val->nallocs;
         ++val->ncurallocs;
@@ -305,7 +318,7 @@ public:
             return;
         }
 
-        memtrack* val = const_cast<memtrack*>(hash->find_value(
+        memtrack_entry* val = const_cast<memtrack_entry*>(hash->find_value(
             tracking != nullptr ? tracking->hash : unknown_hash
         ));
 

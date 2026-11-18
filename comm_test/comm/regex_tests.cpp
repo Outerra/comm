@@ -51,7 +51,7 @@ unsigned live_instruction_arrays()
 {
     std::vector<coid::memtrack> entries(coid::memtrack_count() + 64);
     const unsigned count = coid::memtrack_list(entries.data(), unsigned(entries.size()), false);
-    const unsigned hash = coid::type_info::get<coid::Reinst[]>().hash;
+    const uint64 hash = coid::type_info::get<coid::Reinst[]>().hash;
     for (unsigned i = 0; i < count; ++i) {
         if (entries[i].hash == hash)
             return entries[i].ncurallocs;

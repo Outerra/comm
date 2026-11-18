@@ -6,7 +6,7 @@ namespace coid
 /// @brief Stack trace of single memory operation alloc/free
 struct memtrack_stacktrace
 {
-    coid::token _name = 0;               //< class identifier
+    coid::token _name = 0;               //< class name - its memtrack entry's (the tracker's copy, valid while the process runs)
     uints _size = 0;                    //< size of memory operation        
     stacktrace _stack_trace;             //< stack trace of memory operation call
 

@@ -132,8 +132,8 @@ struct memtrack {
     unsigned int nallocs = 0;           //< number of allocations since the last memtrack_list call
     unsigned int ncurallocs = 0;        //< total current number of allocations
     unsigned int nlifeallocs = 0;       //< lifetime number of allocations
-    coid::token name = 0;               //< class identifier
-    uint64 hash = 0;                    //< class hash (coid::type_info::hash) - the row's key
+    coid::token name = 0;               //< class name (coid::type_info::name) - the tracker's copy, made by the type's first allocation: valid while the process runs (the unload of the module that allocated the type leaves it)
+    uint64 hash = 0;                    //< class hash (coid::type_info::hash) - the entry's key
 
     void swap(memtrack& m) {
         std::swap(size, m.size);
@@ -147,13 +147,14 @@ struct memtrack {
     }
 };
 
-///Track allocation request for name
-//@param name allocation name, unique pointer
+///Track allocation request for a type
+//@param tracking the type's information (coid::type_info::get) - its hash the entry's key, its name copied by the
+// entry's first allocation; null for the "unknown" entry
 //@param size allocated size
 void memtrack_alloc( const coid::type_info* tracking, size_t size );
 
-///Track allocation request for name
-//@param name allocation name, unique pointer
+///Track freeing of a type's allocation
+//@param tracking the type's information (coid::type_info::get) - its hash finds the entry; null for the "unknown" entry
 //@param size freed size
 void memtrack_free( const coid::type_info* tracking, size_t size );
 
