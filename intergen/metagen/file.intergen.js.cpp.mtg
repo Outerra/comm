@@ -46,8 +46,8 @@ $-(if ?event)$
 
 $-(/if)$
 $-(if ?hasprops)$
-    static void _getter(v8::Local<v8::Name> property, const v8::ACCESSOR &info);
-    static void _setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::ACCESSOR &info);
+    static v8::INTERCEPTED _getter(v8::Local<v8::Name> property, const v8::ACCESSOR &info);
+    static v8::INTERCEPTED _setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::SETTER_ACCESSOR &info);
 
 $-(/if)$
     static void _js_release_callback(const v8::WeakCallbackInfo<$name$_js_dispatcher>& data)
@@ -63,11 +63,11 @@ protected:
 
 public:
 
-    v8::Handle<v8::Object> create_interface_object(v8::Handle<v8::Context> context, bool make_weak);
+    v8::Local<v8::Object> create_interface_object(v8::Local<v8::Context> context, bool make_weak);
 
-    static v8::Handle<v8::Script> load_script(const coid::token& script, const coid::token& file_name);
+    static v8::Local<v8::Script> load_script(const coid::token& script, const coid::token& file_name);
 $-(if ?event)$
-    void bind_events(v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref) const;
+    void bind_events(v8::Local<v8::Context> context, bool force, v8::Local<v8::Value> ref) const;
 $-(/if)$
 
     COIDNEWDELETE($name$_js_dispatcher);
@@ -122,10 +122,10 @@ $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$_js_dispatcher> $name$(const ::js::script_handle& scriptpath
-        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>*);
+        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Local<v8::Context>*);
 
     $-(if !internal)$
-    static v8::Handle<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args);
+    static v8::Local<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args);
 
     $-(/if)$
 $-[/method]$
@@ -194,16 +194,16 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     }
 
     v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..name$_js_dispatcher* ifc = static_cast<$..name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
 $-[args ?inarg !nojs after="\n"]$
 $-(if ?callback)$
@@ -219,7 +219,7 @@ $-[/args]$
     }
 
     v8::Local<v8::Context> ctx = ifc->context(iso);
-    v8::Context::Scope context_scope(ctx);
+    v8::context_scope context_scope(ctx);
 
     try {
         //stream the arguments in
@@ -260,17 +260,17 @@ $-(if ?nalloutargs)$
 
         //stream out
 $-(if ?multiout)$
-        v8::Handle<v8::Object> r__ = v8::Object::New(iso);
+        v8::Local<v8::Object> r__ = v8::Object::New(iso);
 $-(/if)$
 $-(if !return.type="void")$
-        $(if ?multiout)$r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(rval__));$(elif)$v8::Handle<v8::Value> r__ = read_to_v8(rval__);$(/if)$
+        $(if ?multiout)$r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(rval__));$(elif)$v8::Local<v8::Value> r__ = read_to_v8(rval__);$(/if)$
 $-(/if)$
 $-[args ?outarg]$
   $-(if ?..multiout)$
         r__->Set(ctx, v8::symbol("$name$", iso), read_to_v8($name$));
   $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
-        v8::Handle<v8::Value> r__ = read_to_v8($name$);
+        v8::Local<v8::Value> r__ = read_to_v8($name$);
   $-(/if)$
 $-[/args]$
 
@@ -293,8 +293,8 @@ $-(if ?internal)$
     throw coid::exception("method not marked for scripting");
 $-(elif)$
     v8::HandleScope handle_scope__(iso);
-    v8::Handle<v8::Context> ctx__ = context(iso);
-    v8::Context::Scope context_scope__(ctx__);
+    v8::Local<v8::Context> ctx__ = context(iso);
+    v8::context_scope context_scope__(ctx__);
     v8::TryCatch js_trycatch__(iso);
 
     // prepare the "in" arguments
@@ -302,7 +302,7 @@ $-[args ?inarg !iref]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
 $-[/args]$
 $-(if ?ninargs)$
-    v8::Handle<v8::Value> __inargs[] = {
+    v8::Local<v8::Value> __inargs[] = {
 $-[args ?inarg rest=","]$
         to_v8$(if ?volatile)$_volatile$(/ if)$<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::read($name$)
 $-[/args]$
@@ -313,7 +313,7 @@ $-(/if)$
     v8::Local<v8::Value> r__ = fn__->Call(
         ctx__,
         _object.Get(iso),
-        $(if ?ninargs)$$ninargs$, __inargs$(elif)$0, 0$(/if)$).ToLocalChecked();
+        $(if ?ninargs)$$ninargs$, __inargs$(elif)$0, 0$(/if)$).FromMaybe(v8::Local<v8::Value>());
 
 $-[args ?inarg]$$(if ?volatile)$
     to_v8$(if ?volatile)$_volatile$(/if)$<$basetype$>::cleanup(__inargs[$@order$]);$(/if)$
@@ -395,8 +395,8 @@ $-(if ?internal)$
     throw coid::exception("method not marked for scripting");
 $-(elif)$
     v8::HandleScope handle_scope__(iso);
-    v8::Handle<v8::Context> ctx__ = context(iso);
-    v8::Context::Scope context_scope__(ctx__);
+    v8::Local<v8::Context> ctx__ = context(iso);
+    v8::context_scope context_scope__(ctx__);
     v8::TryCatch js_trycatch__(iso);
 
     bind_events(ctx__, false, v8::Undefined(iso));
@@ -419,7 +419,7 @@ $-[args ?inarg !iref]$
     static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
 $-[/args]$
 $-(if ?ninargs)$
-    v8::Handle<v8::Value> __inargs[] = {
+    v8::Local<v8::Value> __inargs[] = {
 $-[args ?inarg rest=","]$
         to_v8$(if ?volatile)$_volatile$(/ if)$<$(if ?fnarg)$$type$ (*)($fnargs$)$(elif)$$basetype$$(/if)$>::read($name$)
 $-[/args]$
@@ -430,7 +430,7 @@ $-(/if)$
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx__,
         _object.Get(iso),
-        $(if ?ninargs)$$ninargs$, __inargs$(elif)$0, 0$(/if)$).ToLocalChecked();
+        $(if ?ninargs)$$ninargs$, __inargs$(elif)$0, 0$(/if)$).FromMaybe(v8::Local<v8::Value>());
 
 $-[args ?inarg]$$(if ?volatile)$
     to_v8$(if ?volatile)$_volatile$(/if)$<$basetype$>::cleanup(__inargs[$@order$]);$(/if)$
@@ -507,19 +507,19 @@ void $..name$_js_dispatcher::v8_evback_$name$$@order$(const v8::ARGUMENTS& args)
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $..ns suffix="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns suffix="::"$js::$..name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
-    v8::Handle<v8::Context> ctx = ifc->context(iso);
-    v8::Context::Scope context_scope(ctx);
+    v8::Local<v8::Context> ctx = ifc->context(iso);
+    v8::context_scope context_scope(ctx);
     v8::TryCatch js_trycatch(iso);
 
     ifc->bind_events(ctx, false, v8::Undefined(iso));
@@ -543,7 +543,12 @@ $-(/if)$
     v8::Local<v8::Value> r__ = ev__->Call(
         ctx,
         ifc->_object.Get(iso),
-        $(if ?ninargs)$nargs, largs$(elif)$0, 0$(/if)$).ToLocalChecked();
+        $(if ?ninargs)$nargs, largs$(elif)$0, 0$(/if)$).FromMaybe(v8::Local<v8::Value>());
+
+    if (js_trycatch.HasCaught()) {
+        js_trycatch.ReThrow();
+        return;
+    }
 
     args.GetReturnValue().Set(r__);
 }
@@ -551,30 +556,31 @@ $-(/if)$
 $-[/event]$
 $-(if ?hasprops)$
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCESSOR& args)
+v8::INTERCEPTED $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCESSOR& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
     $ns suffix="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns suffix="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
     auto R_ = ifc ? ifc->_real() : 0;
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "$..name$[]";
-        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
+        V8_INTERCEPTED(true);
     }
 
-    v8::Context::Scope context_scope(ifc->context(iso));
+    v8::context_scope context_scope(ifc->context(iso));
 
     v8::String::Utf8Value key(iso, property);
     coid::token tok(*key, key.length());
@@ -587,42 +593,44 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
 
     //stream out
  $-(if getter.iref)$
-    v8::Handle<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
+    v8::Local<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
  $-(elif getter.cref)$
-    v8::Handle<v8::Value> r__ = ::js::wrap_data_interface(value.get(), "$getter.basetype$"_T, ifc->context(iso));
+    v8::Local<v8::Value> r__ = ::js::wrap_data_interface(value.get(), "$getter.basetype$"_T, ifc->context(iso));
  $-(elif)$
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
-    v8::Handle<v8::Value> r__ = read_to_v8(value);
+    v8::Local<v8::Value> r__ = read_to_v8(value);
  $-(/if)$
 
     args.GetReturnValue().Set(r__);
+    V8_INTERCEPTED(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::_setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::ACCESSOR& args)
+v8::INTERCEPTED $name$_js_dispatcher::_setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::SETTER_ACCESSOR& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
     $ns suffix="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns suffix="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
     auto R_ = ifc ? ifc->_real() : 0;
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "$..name$[] = ...";
-        return v8::queue_js_exception(iso, v8::Exception::ReferenceError, tmp);
+        v8::queue_js_exception(iso, v8::Exception::ReferenceError, tmp);
+        V8_INTERCEPTED(true);
     }
 
-    v8::Context::Scope context_scope(ifc->context(iso));
+    v8::context_scope context_scope(ifc->context(iso));
     static_assert(coid::has_metastream_operator<$setter.basetype$>::value, "missing metastream operator for '$setter.basetype$'");
     threadcached<$setter.basetype$> val;
     write_from_v8(value, val);
@@ -639,7 +647,7 @@ $-(/if)$
     {
         v8::queue_js_exception(iso,v8::Exception::Error,e.what());
     }
-    args.GetReturnValue().Set(value);
+    V8_SETTER_DONE(args, value);
 }
 $-(/if)$
 
@@ -650,16 +658,16 @@ void $name$_js_dispatcher::v8rebind_events(const v8::ARGUMENTS& args)
 
 $-(if ?event)$
     v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $ns suffix="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns suffix="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
     if (ifc) {
         v8::Local<v8::Value> val;
@@ -678,22 +686,22 @@ void $name$_js_dispatcher::v8current_global(const v8::ARGUMENTS& args)
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
     $ns suffix="::"$js::$name$_js_dispatcher* ifc = static_cast<$ns suffix="::"$js::$name$_js_dispatcher*>
-        (v8::Handle<v8::External>::Cast(intobj__)->Value());
+        (v8::external_value(intobj__));
 
     args.GetReturnValue().Set(ifc->context(iso)->Global()->GetPrototype());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object(v8::Handle<v8::Context> context, bool make_weak)
+v8::Local<v8::Object> $name$_js_dispatcher::create_interface_object(v8::Local<v8::Context> context, bool make_weak)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -730,12 +738,12 @@ $-(/if)$
         _objtempl.Reset(iso, ot);
     }
 
-    v8::Context::Scope ctxscope(context);
+    v8::context_scope ctxscope(context);
     v8::Local<v8::Object> obj = _objtempl.Get(iso)->NewInstance(context).ToLocalChecked();
 
-    v8::Handle<v8::External> map_ptr = v8::External::New(iso, this);
+    v8::Local<v8::External> map_ptr = v8::new_external(iso, this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints($hash$));
+    v8::Local<v8::External> hash_ptr = v8::new_external(iso, (void*)ints($hash$));
     obj->SetInternalField(1, hash_ptr);
 
     if (make_weak) {
@@ -749,14 +757,14 @@ $-(/if)$
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::Handle<v8::Script> $name$_js_dispatcher::load_script(const coid::token& script, const coid::token& fname)
+v8::Local<v8::Script> $name$_js_dispatcher::load_script(const coid::token& script, const coid::token& fname)
 {
     return ::js::script_handle::load_script(script, fname, ::js::rethrow_in_cxx);
 }
 
 $-(if !event.empty)$
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::bind_events(v8::Handle<v8::Context> context, bool force, v8::Handle<v8::Value> ref) const
+void $name$_js_dispatcher::bind_events(v8::Local<v8::Context> context, bool force, v8::Local<v8::Value> ref) const
 {
     if (!force && _bound_events)
         return;
@@ -764,13 +772,13 @@ void $name$_js_dispatcher::bind_events(v8::Handle<v8::Context> context, bool for
     //check if the context is from a html window & wait for loaded state
     bool final_state = true;
     uint nf = context->GetNumberOfEmbedderDataFields();
-    const uint* cs = nf > 3 ? (const uint*)context->GetAlignedPointerFromEmbedderData(3) : 0;
+    const uint* cs = nf > 3 ? (const uint*)v8::context_aligned_pointer(context, 3) : 0;
     if (cs && (*cs & ~1ULL) == 0xBB07F010ULL) {
         if ((*cs & 1) == 0)
             final_state = false;
     }
 
-    v8::Isolate* iso = context->GetIsolate();
+    v8::Isolate* iso = v8::context_isolate(context);
 
     static token names[] = {
 $-[event]$
@@ -779,7 +787,7 @@ $-[/event]$
     };
 
     v8::HandleScope handle_scope__(iso);
-    v8::Context::Scope context_scope__(context);
+    v8::context_scope context_scope__(context);
     v8::TryCatch js_trycatch(iso);
     v8::Local<v8::Object> global;
 
@@ -819,14 +827,14 @@ $-(/if)$
 $-[method ?creator]$
 ////////////////////////////////////////////////////////////////////////////////
 iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_handle& script__
-        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>* ctx)
+        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Local<v8::Context>* ctx)
 {
     v8::Isolate* iso = script__.has_context()
-        ? script__.context()->GetIsolate()
+        ? v8::context_isolate(script__.context())
         : v8::Isolate::GetCurrent();
 
     v8::EscapableHandleScope handle_scope__(iso);
-    v8::Handle<v8::Context> context;
+    v8::Local<v8::Context> context;
 
     // create interface object
     iref<$..name$_js_dispatcher> ifc = $..ns suffix="::"$$..name$::$name$(new $..name$_js_dispatcher$[args]$, $name$$[/args]$);
@@ -842,7 +850,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
         bool isscript = path.ends_with(".js");
 
         if (ispage && !isscript) {
-            typedef v8::Handle<v8::Context> (*fn_getctx)(const coid::token&, coid::ref_intrusive_base*);
+            typedef v8::Local<v8::Context> (*fn_getctx)(const coid::token&, coid::ref_intrusive_base*);
 
             fn_getctx ctxgetter = reinterpret_cast<fn_getctx>(
                     coid::interface_register::get_interface_creator("~html@system_context_getter2"));
@@ -863,7 +871,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
             context = script__.context();
         else {
             context = v8::Context::New(iso);
-            v8::Context::Scope context_scope(context);
+            v8::context_scope context_scope(context);
             ::js::script_handle::register_global_context_methods(context->Global(), iso);
         }
     }
@@ -872,7 +880,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
     if (ctx)
         *ctx = handle_scope__.Escape(context);
 
-    v8::Context::Scope context_scope(context);
+    v8::context_scope context_scope(context);
 
     if (!extctx && !script__.is_context())
     {
@@ -904,7 +912,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
         if (bindname)
             context->Global()->Set(context, v8::symbol(bindname, iso), ifc->_object.Get(iso));
 
-        v8::Handle<v8::Script> compiled_script = load_script(script_tok, script__.url());
+        v8::Local<v8::Script> compiled_script = load_script(script_tok, script__.url());
     }
     else {
         ifc->_object.Reset(iso, ifc->create_interface_object(context, false));
@@ -919,7 +927,7 @@ iref<$..name$_js_dispatcher> $..name$_js_dispatcher::$name$(const ::js::script_h
 $-(if !internal)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Creator methods for access from JS
-v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8::ARGUMENTS& args)
+v8::Local<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8::ARGUMENTS& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
@@ -931,13 +939,13 @@ v8::Handle<v8::Value> $..name$_js_dispatcher::v8creator_$name$$@order$(const v8:
     }
 
     v8::EscapableHandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
 
     //$..ns suffix="::"$js::$..name$_js_dispatcher* ifc = static_cast<$..ns suffix="::"$js::$..name$_js_dispatcher*>
-    //    (v8::Handle<v8::External>::Cast(obj__->GetInternalField(0))->Value());
+    //    (v8::external_value(v8::internal_field(obj__, 0)));
 
     v8::Local<v8::Context> ctx = iso->GetCurrentContext();
-    v8::Context::Scope context_scope(ctx);
+    v8::context_scope context_scope(ctx);
 
     //stream the arguments in
 $-[args ?inarg !nojs]$
@@ -974,14 +982,14 @@ $-[/args]$
 
     //stream out
 $-(if ?noutargs)$
-    v8::Handle<v8::Object> r__ = v8::Object::New(iso);
+    v8::Local<v8::Object> r__ = v8::Object::New(iso);
     r__->Set(ctx, v8::symbol("$$ret", iso), nifc
-        ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
-        : v8::Handle<v8::Value>(v8::Null(iso)));
+        ? v8::Local<v8::Value>(nifc->create_interface_object(ctx, true))
+        : v8::Local<v8::Value>(v8::Null(iso)));
 $-(elif)$
-    v8::Handle<v8::Value> r__ = nifc
-        ? v8::Handle<v8::Value>(nifc->create_interface_object(ctx, true))
-        : v8::Handle<v8::Value>(v8::Null(iso));
+    v8::Local<v8::Value> r__ = nifc
+        ? v8::Local<v8::Value>(nifc->create_interface_object(ctx, true))
+        : v8::Local<v8::Value>(v8::Null(iso));
 $-(/if)$
 
 $-[args ?outarg]$
@@ -999,7 +1007,7 @@ $-[/method]$
 $-(if !virtual)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, v8::Handle<v8::Context> context)
+v8::Local<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, v8::Local<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -1010,11 +1018,11 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, 
     if (context.IsEmpty())
         context = iso->GetCurrentContext();
 
-    v8::Context::Scope context_scope(context);
+    v8::context_scope context_scope(context);
     v8::EscapableHandleScope scope(iso);
 
     iref<$ns suffix="::"$js::$name$_js_dispatcher> ifc;
-    v8::Handle<v8::Object> obj;
+    v8::Local<v8::Object> obj;
 
     if (orig_ifc->intergen_backend() == intergen_interface::backend::js)
         obj = static_cast<$name$_js_dispatcher*>(orig_ifc)->_object.Get(iso);
@@ -1031,9 +1039,9 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(::$ns suffix="::"$$name$* orig_ifc, 
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(coid::ref_intrusive_base* host, v8::Handle<v8::Context> context)
+static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(coid::ref_intrusive_base* host, v8::Local<v8::Context> context)
 {
-    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
+    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : v8::context_isolate(context);
     if (context.IsEmpty())
         context = iso->GetCurrentContext();
 
@@ -1041,7 +1049,7 @@ static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$nam
     if (!host)
         return 0;
 
-    v8::Context::Scope context_scope(context);
+    v8::context_scope context_scope(context);
     v8::HandleScope scope(iso);
 
     // create interface object
@@ -1111,13 +1119,13 @@ class $name$_js_dispatcher
     : public ::js::interface_context
 {
 $-(if ?hasprops)$
-    static void _getter(v8::Local<v8::Name> property, const v8::ACCESSOR &info);
-    static void _setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::ACCESSOR &info);
+    static v8::INTERCEPTED _getter(v8::Local<v8::Name> property, const v8::ACCESSOR &info);
+    static v8::INTERCEPTED _setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::SETTER_ACCESSOR &info);
 
 $-(/if)$
 public:
 
-    v8::Handle<v8::Object> create_interface_object(v8::Handle<v8::Context> context);
+    v8::Local<v8::Object> create_interface_object(v8::Local<v8::Context> context);
 
     COIDNEWDELETE($name$_js_dispatcher);
 
@@ -1139,10 +1147,10 @@ $(if !comments.empty)$$[comments]-$
     $@value$
 $[/comments]$$(/if)-$
     static iref<$..name$_js_dispatcher> $name$(const ::js::script_handle& scriptpath
-        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Handle<v8::Context>*);
+        $-[args]$, $type$ $name$$size$$[/args]$, const coid::token& bindname, v8::Local<v8::Context>*);
 
     $-(if !internal)$
-    static v8::Handle<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args);
+    static v8::Local<v8::Value> v8creator_$name$$@order$(const v8::ARGUMENTS& args);
 
     $-(/if)$
 $-[/method]$
@@ -1170,15 +1178,15 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     }
 
     v8::HandleScope handle_scope__(iso);
-    v8::Local<v8::Object> obj__ = args.Holder();
+    v8::Local<v8::Object> obj__ = args.This();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
         return (void)args.GetReturnValue().Set(v8::Undefined(iso));
 
-    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
+    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::external_value(intobj__));
     ::$....nsx$$....class$* R_ = reinterpret_cast<::$....nsx$$....class$*>(disp_->ifc.ready());
 
     if (!R_) {
@@ -1188,7 +1196,7 @@ void $..name$_js_dispatcher::v8_$name$$@order$(const v8::ARGUMENTS& args)
     }
 
     v8::Local<v8::Context> ctx = iso->GetCurrentContext();
-    v8::Context::Scope context_scope(ctx);
+    v8::context_scope context_scope(ctx);
 
     try {
         //stream the arguments in
@@ -1228,13 +1236,13 @@ $-[/args]$
 $-(if !return.type="void" /*has some return value*/)$
   $-(if !retifc ?noutargs)$
         static_assert(coid::has_metastream_operator<$return.type$>::value, "missing metastream operator for '$return.type$'");
-        v8::Handle<v8::Object> r__ = v8::Object::New(iso);
+        v8::Local<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), read_to_v8(_rval_));
   $-(elif ?noutargs)$
-        v8::Handle<v8::Object> r__ = v8::Object::New(iso);
+        v8::Local<v8::Object> r__ = v8::Object::New(iso);
         r__->Set(ctx, v8::symbol("$$ret", iso), ::js::wrap_interface(_rval_.get(), ifc->context(iso)));
   $-(elif !retifc)$
-        v8::Handle<v8::Value> r__;
+        v8::Local<v8::Value> r__;
     $-(if ?return.ptr)$
         static_assert(coid::has_metastream_operator<$return.basetype$>::value, "missing metastream operator for '$return.basetype$'");
         if (_rval_)
@@ -1244,9 +1252,9 @@ $-(if !return.type="void" /*has some return value*/)$
         r__ = read_to_v8(_rval_);
     $-(/if)$
   $-(elif ?return.ifc_type="ifc_class")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
+        v8::Local<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
   $-(elif ?return.ifc_type="ifc_struct")$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
+        v8::Local<v8::Value> r__ = ::js::wrap_data_interface<$return.basetype$>(_rval_.ready(), "$return.basetype$"_T, ifc->context(iso));
   $-(/if)$
 
   $-[args ?outarg]$
@@ -1262,16 +1270,16 @@ $-(if !return.type="void" /*has some return value*/)$
 $-(elif ?noutargs="1" /*void return and just a single output value*/)$
   $-[args ?outarg]$
     $-(if ?iref)$
-        v8::Handle<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
+        v8::Local<v8::Value> r__ = ::js::wrap_interface(_rval_.get(), ifc->context(iso));
     $-(elif ?cref)$
-        v8::Handle<v8::Value> r__ = ::js::wrap_data_interface(_rval_.get(), ifc->context(iso));
+        v8::Local<v8::Value> r__ = ::js::wrap_data_interface(_rval_.get(), ifc->context(iso));
     $-(elif)$
         static_assert(coid::has_metastream_operator<$basetype$>::value, "missing metastream operator for '$basetype$'");
-        v8::Handle<v8::Value> r__ = read_to_v8($name$);
+        v8::Local<v8::Value> r__ = read_to_v8($name$);
     $-(/if)$
   $-[/args]$
 $-(elif ?noutargs /*multiple output values*/)$
-        v8::Handle<v8::Object> r__ = v8::Object::New(iso);
+        v8::Local<v8::Object> r__ = v8::Object::New(iso);
   $-[args ?outarg]$
     $-(if ?iref)$
         r__->Set(ctx, v8::symbol("$name$", iso), ::js::wrap_interface($name$.get(), ifc->context(iso)));
@@ -1283,7 +1291,7 @@ $-(elif ?noutargs /*multiple output values*/)$
     $-(/if)$
   $-[/args]$
 $-(elif)$
-        v8::Handle<v8::Object> r__;
+        v8::Local<v8::Object> r__;
 $(/if)-$
 
         args.GetReturnValue().Set(r__);
@@ -1297,26 +1305,27 @@ $(/if)-$
 $-[/method]$
 $-(if ?hasprops)$
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCESSOR& args)
+v8::INTERCEPTED $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCESSOR& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
+    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::external_value(intobj__));
     ::$....nsx$$....class$* R_ = reinterpret_cast<::$....nsx$$....class$*>(disp_->ifc.ready());
 
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "$..name$[]";
-        return v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
+        v8::queue_js_exception(iso, &v8::Exception::ReferenceError, tmp);
+        V8_INTERCEPTED(true);
     }
 
     v8::String::Utf8Value key(iso, property);
@@ -1330,37 +1339,39 @@ void $name$_js_dispatcher::_getter(v8::Local<v8::Name> property, const v8::ACCES
 
     //stream out
  $-(if ?getter.ifc_type="ifc_class")$
-    v8::Handle<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
+    v8::Local<v8::Value> r__ = ::js::wrap_interface(value.get(), ifc->context(iso));
  $-(elif ?getter.ifc_type="ifc_struct")$
-    v8::Handle<v8::Value> r__ = ::js::wrap_data_interface(value.get(), ifc->context(iso));
+    v8::Local<v8::Value> r__ = ::js::wrap_data_interface(value.get(), ifc->context(iso));
  $-(elif)$
     static_assert(coid::has_metastream_operator<$getter.basetype$>::value, "missing metastream operator for '$getter.basetype$'");
-    v8::Handle<v8::Value> r__ = read_to_v8(value);
+    v8::Local<v8::Value> r__ = read_to_v8(value);
  $-(/if)$
 
     args.GetReturnValue().Set(r__);
+    V8_INTERCEPTED(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void $name$_js_dispatcher::_setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::ACCESSOR& args)
+v8::INTERCEPTED $name$_js_dispatcher::_setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::SETTER_ACCESSOR& args)
 {
     v8::Isolate* iso = args.GetIsolate();
 
     v8::HandleScope handle_scope__(iso);
     v8::Local<v8::Object> obj__ = args.Holder();
     if (obj__.IsEmpty() || obj__->InternalFieldCount() == 0)
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    v8::Local<v8::Value> intobj__ = obj__->GetInternalField(0);
+    v8::Local<v8::Value> intobj__ = v8::internal_field(obj__, 0);
     if (!intobj__->IsExternal())
-        return (void)args.GetReturnValue().Set(v8::Undefined(iso));
+        V8_INTERCEPTED(false);
 
-    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::Handle<v8::External>::Cast(intobj__)->Value());
+    $..name$_js_dispatcher* disp_ = static_cast<$..name$_js_dispatcher*>(v8::external_value(intobj__));
     ::$....nsx$$....class$* R_ = reinterpret_cast<::$....nsx$$....class$*>(disp_->ifc.ready());
     if (!R_) {
         coid::charstr tmp = "Null interface object in ";
         tmp << "$..name$[] = ...";
-        return v8::queue_js_exception(iso, v8::Exception::ReferenceError, tmp);
+        v8::queue_js_exception(iso, v8::Exception::ReferenceError, tmp);
+        V8_INTERCEPTED(true);
     }
 
     static_assert(coid::has_metastream_operator<$setter.basetype$>::value, "missing metastream operator for '$setter.basetype$'");
@@ -1379,13 +1390,13 @@ $-(/if)$
     {
         v8::queue_js_exception(iso,v8::Exception::Error,e.what());
     }
-    args.GetReturnValue().Set(value);
+    V8_SETTER_DONE(args, value);
 }
 $-(/if)$
 
 
 ////////////////////////////////////////////////////////////////////////////////
-v8::Handle<v8::Object> $name$_js_dispatcher::create_interface_object(v8::Handle<v8::Context> context)
+v8::Local<v8::Object> $name$_js_dispatcher::create_interface_object(v8::Local<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -1410,12 +1421,12 @@ $-(/if)$
         _objtempl.Reset(iso, ot);
     }
 
-    v8::Context::Scope ctxscope(context);
+    v8::context_scope ctxscope(context);
     v8::Local<v8::Object> obj = _objtempl.Get(iso)->NewInstance(context).ToLocalChecked();
 
-    v8::Handle<v8::External> map_ptr = v8::External::New(iso, this);
+    v8::Local<v8::External> map_ptr = v8::new_external(iso, this);
     obj->SetInternalField(0, map_ptr);
-    v8::Handle<v8::External> hash_ptr = v8::External::New(iso, (void*)ints($hash$));
+    v8::Local<v8::External> hash_ptr = v8::new_external(iso, (void*)ints($hash$));
     obj->SetInternalField(1, hash_ptr);
 
     return obj;
@@ -1424,7 +1435,7 @@ $-(/if)$
 $-(if !virtual)$
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS wrapper from an existing interface object
-v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::Handle<v8::Context> context)
+v8::Local<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::Local<v8::Context> context)
 {
     v8::Isolate* iso = v8::Isolate::GetCurrent();
 
@@ -1435,29 +1446,29 @@ v8::Handle<v8::Value> wrap_ifc_to_js_$name$(const coref<$name$>& orig_ifc, v8::H
     if (context.IsEmpty())
         context = iso->GetCurrentContext();
 
-    v8::Context::Scope context_scope(context);
+    v8::context_scope context_scope(context);
     v8::EscapableHandleScope scope(iso);
 
     // create interface object
     $ns suffix="::"$js::$name$_js_dispatcher* difc = new $ns suffix="::"$js::$name$_js_dispatcher(orig_ifc);
 
-    v8::Handle<v8::Value> r__ = v8::Handle<v8::Value>(difc->create_interface_object(context));
+    v8::Local<v8::Value> r__ = v8::Local<v8::Value>(difc->create_interface_object(context));
     return scope.Escape(r__);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ///Create JS interface from a host
-//static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(::$..nsx$$..class$* host, v8::Handle<v8::Context> context)
+//static iref<$ns suffix="::"$js::$name$_js_dispatcher> make_js_ifc_from_host_$name$(::$..nsx$$..class$* host, v8::Local<v8::Context> context)
 //{
 //    // check that the orig points to an object
-//    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : context->GetIsolate();
+//    v8::Isolate* iso = context.IsEmpty() ? v8::Isolate::GetCurrent() : v8::context_isolate(context);
 //    if (!host)
 //        return 0;
 //
 //    if (context.IsEmpty())
 //        context = iso->GetCurrentContext();
 //
-//    v8::Context::Scope context_scope(context);
+//    v8::context_scope context_scope(context);
 //    v8::HandleScope scope(iso);
 //
 //    // create interface object

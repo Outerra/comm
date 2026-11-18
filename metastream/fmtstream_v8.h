@@ -45,9 +45,22 @@
 #include "../global.h"
 #include "metastream.h"
 
-#if V8_MAJOR_VERSION > 7 || (V8_MAJOR_VERSION == 7 && V8_MINOR_VERSION >= 7)
-#define V8_NEW2
-#endif
+///V8 version as a number: major * 100 + minor (700 for 7.0, 1506 for 15.6)
+#define V8_VERSION_NUM (V8_MAJOR_VERSION * 100 + V8_MINOR_VERSION)
+
+// V8 API generations used below, by the version that brought the newer API
+// (tested with 7.0 and 15.6; the versions in between are from V8's history):
+//   707  Set() etc. return Maybe (.Check()), BooleanValue(Isolate*),
+//        Date::New(context, ...) - this was V8_NEW2
+//   703  ArrayBuffer::Detach() replaces Neuter()
+//   800  external memory in ArrayBuffers only through backing stores
+//   1000 Object::GetCreationContextChecked() replaces CreationContext()
+//   1100 ArrayBuffer::Detach(key) returning Maybe
+//   1204 named property interceptors return v8::Intercepted, setters get
+//        PropertyCallbackInfo<void>
+//   1208 setter interceptors get PropertyCallbackInfo<Boolean> (V2)
+// Newer changes (type tags for External and context embedder data, no
+// Context::GetIsolate()) are detected from the API itself, see the helpers.
 
 class intergen_interface;
 
@@ -56,11 +69,169 @@ namespace v8 {
 typedef FunctionCallbackInfo<Value> ARGUMENTS;
 typedef PropertyCallbackInfo<Value> ACCESSOR;
 
-#ifdef V8_NEW2
+#if V8_VERSION_NUM >= 1204
+///Named property interceptors: result and setter callback info
+typedef Intercepted INTERCEPTED;
+#if V8_VERSION_NUM >= 1208
+typedef PropertyCallbackInfo<Boolean> SETTER_ACCESSOR;
+#else
+typedef PropertyCallbackInfo<void> SETTER_ACCESSOR;
+#endif
+///Return from an interceptor: the property was handled (yes) or not
+#define V8_INTERCEPTED(yes) return (yes) ? v8::Intercepted::kYes : v8::Intercepted::kNo
+///Return from a setter interceptor that stored `value`
+#define V8_SETTER_DONE(info, value) return v8::Intercepted::kYes
+#else
+typedef void INTERCEPTED;
+typedef PropertyCallbackInfo<Value> SETTER_ACCESSOR;
+#define V8_INTERCEPTED(yes) return
+#define V8_SETTER_DONE(info, value) return (void)(info).GetReturnValue().Set(value)
+#endif
+
+#if V8_VERSION_NUM >= 707
 #define V8_CHECK    .Check()
 #else
 #define V8_CHECK
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+// Helpers for APIs that changed between V8 versions
+
+///Pointer to engine data as a JS value (type tags since V8 14/15: the default
+/// tag, comm doesn't tag its pointers)
+template <class E = External>
+inline Local<E> new_external(Isolate* iso, void* ptr) {
+    if constexpr (requires { E::New(iso, ptr, 0); })
+        return E::New(iso, ptr, 0);
+    else
+        return E::New(iso, ptr);
+}
+
+///Pointer from a value created with new_external()
+template <class E = External>
+inline void* external_value(Local<Value> val) {
+    Local<E> ext = val.template As<E>();
+    if constexpr (requires { ext->Value(0); })
+        return ext->Value(0);
+    else
+        return ext->Value();
+}
+
+///Internal field of an object as a value (V8 11+ returns Local<Data>)
+inline Local<Value> internal_field(Local<Object> obj, int index) {
+    return obj->GetInternalField(index).template As<Value>();
+}
+
+///The context an object was created in
+template <class O = Object>
+inline Local<Context> creation_context(Isolate* iso, Local<O> obj) {
+#if V8_VERSION_NUM >= 1000
+    if constexpr (requires { obj->GetCreationContextChecked(iso); })
+        return obj->GetCreationContextChecked(iso);
+    else
+        return obj->GetCreationContextChecked();
+#else
+    return obj->CreationContext();
+#endif
+}
+
+///Isolate of a context (current V8 has no Context::GetIsolate(); a context
+/// is used on its isolate's thread, where it's the current isolate)
+template <class C = Context>
+inline Isolate* context_isolate(Local<C> ctx) {
+    if constexpr (requires { ctx->GetIsolate(); })
+        return ctx->GetIsolate();
+    else
+        return Isolate::GetCurrent();
+}
+
+///Aligned pointer the embedder stored in a context's embedder data (default
+/// type tag where V8 requires one), null if the slot doesn't exist yet
+template <class C = Context>
+inline void* context_aligned_pointer(Local<C> ctx, int index) {
+    if (index >= int(ctx->GetNumberOfEmbedderDataFields()))
+        return nullptr;     //current V8 aborts on reads past the end
+    if constexpr (requires { ctx->GetAlignedPointerFromEmbedderData(index, 0); })
+        return ctx->GetAlignedPointerFromEmbedderData(index, 0);
+    else
+        return ctx->GetAlignedPointerFromEmbedderData(index);
+}
+
+///Store an aligned pointer in a context's embedder data, for
+/// context_aligned_pointer()
+template <class C = Context>
+inline void set_context_aligned_pointer(Local<C> ctx, int index, void* ptr) {
+    if constexpr (requires { ctx->SetAlignedPointerInEmbedderData(index, ptr, 0); })
+        ctx->SetAlignedPointerInEmbedderData(index, ptr, 0);
+    else
+        ctx->SetAlignedPointerInEmbedderData(index, ptr);
+}
+
+///Function object of a native callback, in a context
+inline Local<Function> new_function(Local<Context> ctx, FunctionCallback fn) {
+    return FunctionTemplate::New(context_isolate(ctx), fn)->GetFunction(ctx).ToLocalChecked();
+}
+
+///Microtasks scope for calls into a context from outside of script (host code
+/// calling page functions, setting properties). Contexts with scoped microtasks
+/// (Blink's pages) require one, V8 with DCHECKs aborts without it. Microtasks
+/// queued meanwhile run at the next checkpoint, or when the outermost scope
+/// ends with kRunMicrotasks.
+class microtasks_scope {
+public:
+    explicit microtasks_scope(Local<Context> ctx, MicrotasksScope::Type type = MicrotasksScope::kDoNotRunMicrotasks)
+        : _scope(make(ctx, type)) {}
+
+private:
+    //V8 7.0 takes the isolate, current V8 the context
+    template <class S = MicrotasksScope>
+    static S make(Local<Context> ctx, MicrotasksScope::Type type) {
+        if constexpr (requires { S(ctx, type); })
+            return S(ctx, type);
+        else
+            return S(context_isolate(ctx), type);
+    }
+
+    MicrotasksScope _scope;
+};
+
+///Enter a context from host code: Context::Scope with a microtasks_scope
+class context_scope {
+public:
+    explicit context_scope(Local<Context> ctx) : _context(ctx), _microtasks(ctx) {}
+
+private:
+    Context::Scope _context;
+    microtasks_scope _microtasks;
+};
+
+///Detach an ArrayBuffer from its memory, JS sees it empty afterwards
+inline void detach_array_buffer(Local<ArrayBuffer> ab) {
+#if V8_VERSION_NUM >= 1100
+    ab->Detach(Local<Value>()).Check();
+#elif V8_VERSION_NUM >= 703
+    ab->Detach();
+#else
+    ab->Neuter();
+#endif
+}
+
+///ArrayBuffer on existing memory, without copying; the memory must stay valid
+/// while JS can access it (see detach_array_buffer())
+/// @note V8 8+ takes the memory through std::shared_ptr<BackingStore>, which
+/// needs the standard library V8 was built with. Where it differs (V8 inside
+/// c6e_lib.dll with Chromium's libc++, used from MSVC), define
+/// COMM_V8_EXTERNAL_ARRAY_BUFFER(iso, data, length) to a function that does it
+/// on V8's side (c6e_v8_config.h does).
+inline Local<ArrayBuffer> new_external_array_buffer(Isolate* iso, void* data, size_t length) {
+#if defined(COMM_V8_EXTERNAL_ARRAY_BUFFER)
+    return COMM_V8_EXTERNAL_ARRAY_BUFFER(iso, data, length);
+#elif V8_VERSION_NUM >= 800
+    return ArrayBuffer::New(iso, ArrayBuffer::NewBackingStore(data, length, BackingStore::EmptyDeleter, nullptr));
+#else
+    return ArrayBuffer::New(iso, data, length);
+#endif
+}
 
 
 inline Local<String> symbol(const coid::token& tok, Isolate* iso = 0) {
@@ -83,13 +254,19 @@ inline auto new_object(const P1& p1, Isolate* iso = 0) -> decltype(T::New(iso, p
 
 inline Local<Value> get_value(Local<Object> obj, const coid::token& tok, Local<Context> ctx) {
     Local<Value> val;
-    obj->Get(ctx, symbol(tok, ctx->GetIsolate())).ToLocal(&val);
+    obj->Get(ctx, symbol(tok, context_isolate(ctx))).ToLocal(&val);
     return val;
 }
 
 ///Queue JS exception, to be handled when returning back to JS lib
+/// @param err exception factory, v8::Exception::Error, TypeError etc.
 inline void queue_js_exception(Isolate* iso, v8::Local<v8::Value>(*err)(v8::Local<v8::String>), const coid::token& s) {
     iso->ThrowException((*err)(String::NewFromUtf8(iso, s.ptr(), NewStringType::kNormal, s.len()).ToLocalChecked()));
+}
+
+///Queue JS exception (V8 9.3+ exception factories, with an options argument)
+inline void queue_js_exception(Isolate* iso, v8::Local<v8::Value>(*err)(v8::Local<v8::String>, v8::Local<v8::Value>), const coid::token& s) {
+    iso->ThrowException((*err)(String::NewFromUtf8(iso, s.ptr(), NewStringType::kNormal, s.len()).ToLocalChecked(), v8::Local<v8::Value>()));
 }
 
 } //namespace v8
@@ -108,7 +285,7 @@ class to_v8
 {
 public:
     ///Generic generator from a type to its v8 representation (via metastream)
-    static v8::Handle<v8::Value> read(const T& v);
+    static v8::Local<v8::Value> read(const T& v);
 };
 
 ///Helper class to stream types from v8 objects
@@ -117,18 +294,18 @@ class from_v8
 {
 public:
     ///Generic parser from v8 type representation (via metastream)
-    static bool write(v8::Handle<v8::Value> src, T& res);
+    static bool write(v8::Local<v8::Value> src, T& res);
 };
 
 
 //@{ Fast to_v8/from specializations for base types
 #define V8_FAST_STREAMER(T,V8T,CT) \
 template<> class to_v8<T> { public: \
-    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
-    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
+    static v8::Local<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+    static v8::Local<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
 }; \
 template<> class from_v8<T> { public: \
-    static bool write( v8::Handle<v8::Value> src, T& res ) {\
+    static bool write( v8::Local<v8::Value> src, T& res ) {\
         if(src->IsArray() || src->IsObject() || src->IsUndefined() || src->IsNull() || src->IsFunction())\
         {\
             return false;\
@@ -138,14 +315,14 @@ template<> class from_v8<T> { public: \
         return mv.IsJust(); } \
 }
 
-#ifdef V8_NEW2
+#if V8_VERSION_NUM >= 707
 #define V8_FAST_STREAMER_BOOL(T,V8T,CT) \
 template<> class to_v8<T> { public: \
-    static v8::Handle<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
-    static v8::Handle<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
+    static v8::Local<v8::Value> read(const T& v) { return v8::new_object<v8::V8T>(CT(v)); } \
+    static v8::Local<v8::Value> read(const T* v) { if (v) return v8::new_object<v8::V8T>(CT(*v)); return v8::Undefined(v8::Isolate::GetCurrent()); } \
 }; \
 template<> class from_v8<T> { public: \
-    static bool write( v8::Handle<v8::Value> src, T& res ) {\
+    static bool write( v8::Local<v8::Value> src, T& res ) {\
         res = (T)src->V8T##Value(v8::Isolate::GetCurrent()); \
         return true; } \
 }
@@ -176,7 +353,7 @@ V8_FAST_STREAMER_BOOL(bool, Boolean, bool);
 //#define V8_FAST_STREAMER(T,V8T,CT)
 template<> class to_v8<coid::versionid> {
 public:
-    static v8::Handle<v8::Value> read(const coid::versionid& v)
+    static v8::Local<v8::Value> read(const coid::versionid& v)
     {
         return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v));
     }
@@ -184,7 +361,7 @@ public:
 
 template<> class from_v8<coid::versionid> {
 public:
-    static bool write(v8::Handle<v8::Value> src, coid::versionid& res) {
+    static bool write(v8::Local<v8::Value> src, coid::versionid& res) {
         auto mv = src->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext());
         if (mv.IsJust()) {
             const double tmp = mv.FromJust();
@@ -197,7 +374,7 @@ public:
 
 template<typename T> class to_v8<coid::typed_versionid<T>> {
 public:
-    static v8::Handle<v8::Value> read(const coid::typed_versionid<T>& v)
+    static v8::Local<v8::Value> read(const coid::typed_versionid<T>& v)
     {
         return v8::new_object<v8::Number>(*reinterpret_cast<const double*>(&v));
     }
@@ -205,7 +382,7 @@ public:
 
 template<typename T> class from_v8<coid::typed_versionid<T>> {
 public:
-    static bool write(v8::Handle<v8::Value> src, coid::typed_versionid<T>& res) {
+    static bool write(v8::Local<v8::Value> src, coid::typed_versionid<T>& res) {
         auto mv = src->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext());
         if (mv.IsJust()) {
             const double tmp = mv.FromJust();
@@ -221,18 +398,18 @@ public:
 ///Date/time
 template<> class to_v8<timet> {
 public:
-    static v8::Handle<v8::Value> read(const timet& v) {
-#ifdef V8_NEW2
+    static v8::Local<v8::Value> read(const timet& v) {
+#if V8_VERSION_NUM >= 707
         return v8::Date::New(v8::Isolate::GetCurrent()->GetCurrentContext(), double(v.t) * 1e3).ToLocalChecked();
 #else
         return v8::new_object<v8::Date>(double(v.t) * 1e3);
-#endif // V8_NEW2
+#endif
     }
 };
 
 template<> class from_v8<timet> {
 public:
-    static bool write(v8::Handle<v8::Value> src, timet& res) {
+    static bool write(v8::Local<v8::Value> src, timet& res) {
         auto mv = src->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext());
         if (mv.IsJust())
             res = timet(int64(mv.FromJust() * 1e-3));
@@ -243,16 +420,16 @@ public:
 ///Strings
 template<> class to_v8<charstr> {
 public:
-    static v8::Handle<v8::Value> read(const charstr& v) { return v8::string_utf8(v); }
+    static v8::Local<v8::Value> read(const charstr& v) { return v8::string_utf8(v); }
 
-    static v8::Handle<v8::Value> read(const token& v) { return v8::string_utf8(v); }
+    static v8::Local<v8::Value> read(const token& v) { return v8::string_utf8(v); }
 
-    static v8::Handle<v8::Value> read(const char* v) { return v8::string_utf8(v); }
+    static v8::Local<v8::Value> read(const char* v) { return v8::string_utf8(v); }
 };
 
 template<> class from_v8<charstr> {
 public:
-    static bool write(v8::Handle<v8::Value> src, charstr& res) {
+    static bool write(v8::Local<v8::Value> src, charstr& res) {
         if (src->IsUndefined() || src->IsNull()) {
             res.reset();
             return false;
@@ -267,13 +444,13 @@ public:
 
 template<> class to_v8<token> {
 public:
-    static v8::Handle<v8::Value> read(const token& v) { return v8::string_utf8(v); }
+    static v8::Local<v8::Value> read(const token& v) { return v8::string_utf8(v); }
 };
 
 
 ///Helper to fill dynarray from V8 array
 template<class T>
-inline bool v8_write_dynarray(v8::Handle<v8::Value> src, dynarray<T>& a)
+inline bool v8_write_dynarray(v8::Local<v8::Value> src, dynarray<T>& a)
 {
     if (!src->IsArray()) {
         a.reset();
@@ -306,7 +483,7 @@ inline bool v8_write_dynarray(v8::TypedArray* src, dynarray<T>& a)
 ///Generic dynarray<T> partial specialization
 template<class T> class to_v8<dynarray<T>> {
 public:
-    static v8::Handle<v8::Value> read(const dynarray<T>& v) {
+    static v8::Local<v8::Value> read(const dynarray<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
         v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -321,7 +498,7 @@ public:
 
 template<class T> class from_v8<dynarray<T>> {
 public:
-    static bool write(v8::Handle<v8::Value> src, dynarray<T>& res) {
+    static bool write(v8::Local<v8::Value> src, dynarray<T>& res) {
         return v8_write_dynarray(src, res);
     }
 };
@@ -329,7 +506,7 @@ public:
 ///Generic range<T> partial specialization
 template<class T> class to_v8<range<T>> {
 public:
-    static v8::Handle<v8::Value> read(const range<T>& v) {
+    static v8::Local<v8::Value> read(const range<T>& v) {
         uint n = (uint)v.size();
         v8::Local<v8::Array> a = v8::new_object<v8::Array>(n);
         v8::Isolate* iso = v8::Isolate::GetCurrent();
@@ -345,31 +522,31 @@ public:
 ///Generic iref<T> partial specialization
 template<class T> class to_v8<iref<T>> {
 public:
-    static v8::Handle<v8::Value> read(const iref<T>& v) {
+    static v8::Local<v8::Value> read(const iref<T>& v) {
         /*v8::Isolate* iso = v8::Isolate::GetCurrent();
-        typedef v8::Handle<v8::Value>(*ifc_create_wrapper_fn)(T* orig, v8::Handle<v8::Context> context);
+        typedef v8::Local<v8::Value>(*ifc_create_wrapper_fn)(T* orig, v8::Local<v8::Context> context);
 
         ifc_create_wrapper_fn wrap = reinterpret_cast<ifc_create_wrapper_fn>(v->intergen_wrapper(intergen_interface::backend::js));
         if (!wrap) {
             return v8::Null(iso);
         }
 
-        return wrap(v.get(), v8::Handle<v8::Context>());*/
-        return ::js::wrap_interface(v.get(), v8::Handle<v8::Context>());
+        return wrap(v.get(), v8::Local<v8::Context>());*/
+        return ::js::wrap_interface(v.get(), v8::Local<v8::Context>());
     }
 };
 
 ///Generic coref<T> partial specialization
 template<class T> class to_v8<coref<T>> {
 public:
-    static v8::Handle<v8::Value> read(const coref<T>& v) {
-        return ::js::wrap_data_interface(v, token::clean_type_name<T>(), v8::Handle<v8::Context>());
+    static v8::Local<v8::Value> read(const coref<T>& v) {
+        return ::js::wrap_data_interface(v, token::clean_type_name<T>(), v8::Local<v8::Context>());
     }
 };
 
 template<class T> class from_v8<iref<T>> {
 public:
-    static bool write(v8::Handle<v8::Value> src, iref<T>& res) {
+    static bool write(v8::Local<v8::Value> src, iref<T>& res) {
         res = ::js::template unwrap_interface<T>(src);
         return !res.is_empty();
     }
@@ -381,7 +558,7 @@ template<class T>
 class to_v8_volatile : public to_v8<T> {
 public:
     ///Generic generator from a type to its v8 representation
-    static v8::Handle<v8::Value> read(const T& v) {
+    static v8::Local<v8::Value> read(const T& v) {
         return to_v8<T>::read(v);
     }
 };
@@ -390,11 +567,11 @@ template<class T>
 class from_v8_volatile : public from_v8<T> {
 public:
     ///Generic parser from v8 type representation
-    static bool write(v8::Handle<v8::Value> src, T& res) {
+    static bool write(v8::Local<v8::Value> src, T& res) {
         return from_v8<T>::write(src, res);
     }
 
-    static void cleanup(v8::Handle<v8::Value> val) {}
+    static void cleanup(v8::Local<v8::Value> val) {}
 };
 
 /*
@@ -457,9 +634,9 @@ private:
 
 ///Helper to map typed array from C++ to V8
 template<class T, class V8AT>
-inline v8::Handle<v8::ArrayBufferView> v8_map_array_view(const T* ptr, uint count)
+inline v8::Local<v8::ArrayBufferView> v8_map_array_view(const T* ptr, uint count)
 {
-    v8::Local<v8::ArrayBuffer> ab = v8::ArrayBuffer::New(v8::Isolate::GetCurrent(), (void*)ptr, count * sizeof(T));
+    v8::Local<v8::ArrayBuffer> ab = v8::new_external_array_buffer(v8::Isolate::GetCurrent(), (void*)ptr, count * sizeof(T));
     return V8AT::New(ab, 0, count);
 }
 
@@ -467,26 +644,26 @@ inline v8::Handle<v8::ArrayBufferView> v8_map_array_view(const T* ptr, uint coun
 #define V8_STREAMER_MAPARRAY(T, V8AT) \
 template<> class to_v8_volatile<dynarray<T>> : public to_v8<dynarray<T>> {\
 public:\
-    static v8::Handle<v8::Value> read(const dynarray<T>& v) { \
+    static v8::Local<v8::Value> read(const dynarray<T>& v) { \
         return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
     } \
-    static void cleanup( v8::Handle<v8::Value> val ) { \
-        v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
+    static void cleanup( v8::Local<v8::Value> val ) { \
+        v8::detach_array_buffer(v8::ArrayBufferView::Cast(*val)->Buffer()); \
     } \
 }; \
 template<> class from_v8_volatile<dynarray<T>> : public from_v8<dynarray<T>> {\
 public:\
-    static bool write( v8::Handle<v8::Value> src, dynarray<T>& res ) { \
+    static bool write( v8::Local<v8::Value> src, dynarray<T>& res ) { \
         return v8_write_dynarray(v8::TypedArray::Cast(*src), res); \
     } \
 }; \
 template<> class to_v8_volatile<range<T>> : public to_v8<range<T>> {\
 public:\
-    static v8::Handle<v8::Value> read(const range<T>& v) { \
+    static v8::Local<v8::Value> read(const range<T>& v) { \
         return v8_map_array_view<T, V8AT>(v.ptr(), (uint)v.size()); \
     } \
-    static void cleanup( v8::Handle<v8::Value> val ) { \
-        v8::ArrayBufferView::Cast(*val)->Buffer()->Neuter(); \
+    static void cleanup( v8::Local<v8::Value> val ) { \
+        v8::detach_array_buffer(v8::ArrayBufferView::Cast(*val)->Buffer()); \
     } \
 };
 
@@ -507,33 +684,33 @@ V8_STREAMER_MAPARRAY(ulong, v8::Uint32Array)
 
 
 ///V8 values
-template<typename V> class to_v8<v8::Handle<V>> {
+template<typename V> class to_v8<v8::Local<V>> {
 public:
-    typedef v8::Handle<V> T;
-    static v8::Handle<v8::Value> read(T v) { return v; }
+    typedef v8::Local<V> T;
+    static v8::Local<v8::Value> read(T v) { return v; }
 };
 
-template<typename V> class from_v8<v8::Handle<V>> {
+template<typename V> class from_v8<v8::Local<V>> {
 public:
-    typedef v8::Handle<V> T;
-    static bool write(v8::Handle<v8::Value> src, T& res) { res = src.Cast<T>(src); return true; }
+    typedef v8::Local<V> T;
+    static bool write(v8::Local<v8::Value> src, T& res) { res = src.Cast<T>(src); return true; }
 };
 
-template<> class to_v8<v8::Handle<v8::Function>> {
+template<> class to_v8<v8::Local<v8::Function>> {
 public:
-    typedef v8::Handle<v8::Function> T;
-    static v8::Handle<v8::Value> read(T v) { return v; }
+    typedef v8::Local<v8::Function> T;
+    static v8::Local<v8::Value> read(T v) { return v; }
 };
 
-template<> class from_v8<v8::Handle<v8::Function>> {
+template<> class from_v8<v8::Local<v8::Function>> {
 public:
-    typedef v8::Handle<v8::Function> T;
-    static bool write(v8::Handle<v8::Value> src, T& res) { res = v8::Handle<v8::Function>::Cast(src); return true; }
+    typedef v8::Local<v8::Function> T;
+    static bool write(v8::Local<v8::Value> src, T& res) { res = v8::Local<v8::Function>::Cast(src); return true; }
 };
 
 //dummy metastream operator for v8::Handle
 template<typename V>
-inline metastream& operator || (metastream& m, v8::Handle<V>) { RASSERT(0); return m; }
+inline metastream& operator || (metastream& m, v8::Local<V>) { RASSERT(0); return m; }
 
 //@}
 
@@ -575,7 +752,7 @@ protected:
     struct entry
     {
         v8::Local<v8::Object> object;
-        v8::Handle<v8::Value> value;
+        v8::Local<v8::Value> value;
         v8::Local<v8::Array> array;
 
         uint element;
@@ -601,7 +778,7 @@ public:
 
 
     ///Set v8 Value to read from
-    void set(v8::Handle<v8::Value> val) {
+    void set(v8::Local<v8::Value> val) {
         _top = _stack.alloc(1);
         _top->value = val;
 
@@ -610,12 +787,12 @@ public:
     }
 
     ///Get a v8 Value result from streaming
-    v8::Handle<v8::Value> get()
+    v8::Local<v8::Value> get()
     {
         DASSERT(_stack.size() == 1);
         if (!_top) return v8::Null(v8::Isolate::GetCurrent());
 
-        v8::Handle<v8::Value> v = _top->value;
+        v8::Local<v8::Value> v = _top->value;
         _top = _stack.alloc(1);
         _top->element = 0;
 
@@ -797,8 +974,19 @@ public:
                 _bufw.reset();
                 write_binary(p, t.get_size());
 
+#if V8_VERSION_NUM >= 800
+                //a copy, _bufw is reused
+                v8::Local<v8::ArrayBuffer> ab = v8::ArrayBuffer::New(v8::Isolate::GetCurrent(), _bufw.len());
+#if V8_VERSION_NUM >= 1000
+                void* abdata = ab->Data();
+#else
+                void* abdata = ab->GetBackingStore()->Data();
+#endif
+                xmemcpy(abdata, _bufw.ptr(), _bufw.len());
+#else
                 v8::Local<v8::ArrayBuffer> ab = v8::ArrayBuffer::New(v8::Isolate::GetCurrent(),
                     (void*)_bufw.ptr(), _bufw.len());
+#endif
                 _top->value = v8::Uint8Array::New(ab, 0, _bufw.len());
             } break;
 
@@ -1148,7 +1336,7 @@ struct v8_streamer_context
 ////////////////////////////////////////////////////////////////////////////////
 
 template<class T>
-inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
+inline v8::Local<v8::Value> to_v8<T>::read(const T& v)
 {
     if constexpr (requires(coid::metastream& m, const T& v) { m.stream_out(v); })
     {
@@ -1168,7 +1356,7 @@ inline v8::Handle<v8::Value> to_v8<T>::read(const T& v)
 
 
 template<class T>
-inline bool from_v8<T>::write(v8::Handle<v8::Value> src, T& res)
+inline bool from_v8<T>::write(v8::Local<v8::Value> src, T& res)
 {
     if constexpr (requires(coid::metastream m, T& v) { m.stream_in(v); })
     {
@@ -1188,18 +1376,18 @@ inline bool from_v8<T>::write(v8::Handle<v8::Value> src, T& res)
 }
 
 template<class T>
-inline bool write_from_v8(v8::Handle<v8::Value> src, T& t) {
+inline bool write_from_v8(v8::Local<v8::Value> src, T& t) {
     return from_v8<T>::write(src, t);
 }
 
 template<class T>
-inline bool write_from_v8(v8::Handle<v8::Value> src, threadcached<T>& tc) {
+inline bool write_from_v8(v8::Local<v8::Value> src, threadcached<T>& tc) {
     using ST = typename threadcached<T>::storage_type;
     return from_v8<ST>::write(src, *tc);
 }
 
 template<class T>
-inline v8::Handle<v8::Value> read_to_v8(const T& v) {
+inline v8::Local<v8::Value> read_to_v8(const T& v) {
     using ST = typename threadcached<T>::storage_type;
     return to_v8<ST>::read(v);
 }
