@@ -265,6 +265,11 @@ struct token
         return __coid_hash_string(ptr(), len());
     }
 
+    /// @return the text's 64-bit FNV-1a hash (__coid_hash_string64)
+    coid_constexpr_for uint64 hash64() const {
+        return __coid_hash_string64(ptr(), len());
+    }
+
     coid_constexpr_for uint hash_insensitive() const {
         return __coid_hash_string_insensitive(ptr(), len());
     }

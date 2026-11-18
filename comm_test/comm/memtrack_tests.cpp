@@ -29,7 +29,7 @@ bool find_probe_entry(coid::memtrack& entry)
 {
     std::vector<coid::memtrack> entries(coid::memtrack_count() + 64);
     const unsigned count = coid::memtrack_list(entries.data(), unsigned(entries.size()), false);
-    const unsigned hash = coid::type_info::get<memtrack_probe>().hash;
+    const uint64 hash = coid::type_info::get<memtrack_probe>().hash;
 
     for (unsigned i = 0; i < count; ++i) {
         if (entries[i].hash == hash) {

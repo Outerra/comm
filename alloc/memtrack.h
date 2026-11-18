@@ -133,7 +133,7 @@ struct memtrack {
     unsigned int ncurallocs = 0;        //< total current number of allocations
     unsigned int nlifeallocs = 0;       //< lifetime number of allocations
     coid::token name = 0;               //< class identifier
-    unsigned int hash = 0;              //< class hash
+    uint64 hash = 0;                    //< class hash (coid::type_info::hash) - the row's key
 
     void swap(memtrack& m) {
         std::swap(size, m.size);

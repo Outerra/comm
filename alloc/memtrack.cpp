@@ -100,15 +100,15 @@ static void name_filter(charstr& dst, token name)
 //};
 
 struct memtrack_key_extractor {
-    using ret_type = uint;
+    using ret_type = uint64;
     ret_type  operator()(const memtrack& m) const { return m.hash; }
 };
 
-/// @brief  dummy hasher just return uint as it as because memtrack key is already hash
+/// @brief  dummy hasher just return uint64 as it as because memtrack key is already hash
 struct memtrack_key_hasher
 {
-    using key_type = uint;
-    uint operator()(const key_type& key) const { return key; }
+    using key_type = uint64;
+    uint64 operator()(const key_type& key) const { return key; }
 
 };
 
@@ -262,7 +262,7 @@ public:
             return;     //avoid stack overlow from hashmap and stacktrace add
 
         constexpr token_literal unknown = "unknown"_T;
-        constexpr uint unknown_hash = unknown.hash();
+        constexpr uint64 unknown_hash = unknown.hash64();
 
         GUARDTHIS(*mux);
         inside_alloc_in_progress = true;
@@ -297,7 +297,7 @@ public:
     virtual void free(const coid::type_info* tracking, size_t size)
     {
         constexpr token_literal unknown = "unknown"_T;
-        constexpr uint unknown_hash = unknown.hash();
+        constexpr uint64 unknown_hash = unknown.hash64();
 
         GUARDTHIS(*mux);
         if (inside_alloc_in_progress) // this must be from realloc of stacktrace_records from alloc method so don't record it

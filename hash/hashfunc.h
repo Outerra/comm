@@ -106,6 +106,15 @@ inline coid_constexpr_for uint __coid_hash_string(const char* s, uints n, uint s
     return seed;
 }
 
+///FNV-1a hash, 64-bit (the bytes by their unsigned values)
+inline coid_constexpr_for uint64 __coid_hash_string64(const char* s, uints n, uint64 seed = 14695981039346656037ull)
+{
+    for (; n > 0; --n, ++s)
+        seed = (seed ^ uint8(*s)) * 1099511628211ull;
+
+    return seed;
+}
+
 inline coid_constexpr_for uint __coid_hash_c_string_insensitive(const char* s, uint seed = 2166136261u)
 {
     for (; *s; ++s)
