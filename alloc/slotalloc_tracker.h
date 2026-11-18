@@ -53,7 +53,8 @@ enum class slotalloc_mode
     atomic = 4,             //< ins/del operations are done atomically, one inserter, multiple deleters allowed
     tracking = 8,           //< adds data and methods needed for tracking the modifications
     versioning = 16,        //< adds data and methods needed to track version of array items, to handle cases when a new item occupies the same slot and old references to the slot should be invalid;
-                            //  a slot's version is bumped when the slot gets a new item (the first item has version 1) - a deletion or a reset keeps it, an id is valid with the slot's allocated bit (is_valid_id)
+                            //  a slot's version is bumped when the slot gets a new item (the first item has version 1) - a deletion or a reset keeps it, an id is valid with the slot's allocated bit (is_valid_id);
+                            //  16 bits a slot (uint16_zero) - an id refused for its slot's next 65535 items
 
     multikey = 128,         //< used by slothash for multi-key value support
 };
@@ -265,24 +266,25 @@ struct base_versioning
 #endif
 };
 
-///Helper to initialize version to zero
-struct uint8_zero {
-    uint8 value = 0;
+///Helper to initialize a slot's version to zero - 16 bits (an id's version - versionid has room for 24): an id refused for
+/// its slot's next 65535 items
+struct uint16_zero {
+    uint16 value = 0;
 
-    uint8_zero()
+    uint16_zero()
     {}
 
-    uint8_zero(uint8 value) : value(value)
+    uint16_zero(uint16 value) : value(value)
     {}
 
-    operator uint8() const { return value; }
-    operator uint8& () { return value; }
+    operator uint16() const { return value; }
+    operator uint16& () { return value; }
 };
 
 ///Versioning base class specialization
 template<class...Es>
 struct base_versioning<true, Es...>
-    : public base_ext<Es..., uint8_zero>
+    : public base_ext<Es..., uint16_zero>
 {
 #ifndef COID_CONSTEXPR_IF
     versionid get_versionid(uints id) const {
@@ -291,8 +293,7 @@ struct base_versioning<true, Es...>
     }
 
     bool check_versionid(versionid vid) const {
-        uint8 ver = version_array()[vid.id];
-        return vid.version == ver;
+        return vid.ver32() == uint(version_array()[vid.id32()]);
     }
 
     void bump_version(uints id) {
@@ -302,11 +303,11 @@ struct base_versioning<true, Es...>
 
 protected:
 
-    dynarray<uint8_zero>& version_array() {
+    dynarray<uint16_zero>& version_array() {
         return std::get<sizeof...(Es)>(this->_exts);
     }
 
-    const dynarray<uint8_zero>& version_array() const {
+    const dynarray<uint16_zero>& version_array() const {
         return std::get<sizeof...(Es)>(this->_exts);
     }
 };

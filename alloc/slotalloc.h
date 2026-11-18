@@ -905,7 +905,8 @@ public:
 
 protected:
 
-    /// @{ versioning functions
+    /// @{ versioning functions - a slot's version 16 bits (slotalloc_detail::uint16_zero): an id refused for its slot's next
+    /// 65535 items
     versionid get_versionid(uints id) const {
         DASSERT_RET(id <= versionid::max_id, versionid());
         if coid_constexpr_if (VERSIONING) {
@@ -920,8 +921,8 @@ protected:
         if coid_constexpr_if (VERSIONING) {
             if (!vid.is_valid() || vid.id32() >= created())
                 return false;
-            uint8 ver = tracker_t::version_array()[vid.id32()];
-            return uint8(vid.ver32()) == ver;
+            const uint32 ver = tracker_t::version_array()[vid.id32()];
+            return vid.ver32() == ver;
         }
         else
             return true;
