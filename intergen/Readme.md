@@ -340,6 +340,14 @@ conceal         - 1/true, hide window from showing on screenshots
 
 Since Javascript doesn’t support out or inout-type parameters, invocation of interface methods is a bit different from C++. In case there are multiple output-type parameters (including the return type if it’s not void), all out and inout values are returned encapsulated in a compound return value object as its members. The original return value is stored in $ret member in that case. If there is just one output value, the return value (or a single output parameter) is returned directly as the return value to Javascript.
 
+### V8 versions
+
+The generated code and `metastream/fmtstream_v8.h` work with V8 7.0 and with current V8 (tested with 15.6). Version differences are handled in `fmtstream_v8.h`: `V8_VERSION_NUM` (major * 100 + minor, e.g. 1506) selects between API generations, and helpers in namespace v8 (`new_external`, `external_value`, `internal_field`, `creation_context`, `context_isolate`, `context_aligned_pointer`, `detach_array_buffer`, `new_external_array_buffer`) hide the rest. `V8_NEW2` is gone, it's `V8_VERSION_NUM >= 707`.
+
+Mapping engine memory into typed arrays without copying (`ifc_volatile` arrays) needs `v8::ArrayBuffer::NewBackingStore` in V8 8+, which takes `std::shared_ptr`. When V8 is built with a different standard library than the code using it (V8 in Chromium uses its own libc++, the engine uses MSVC's), define `COMM_V8_EXTERNAL_ARRAY_BUFFER(iso, data, length)` to a function that creates the buffer on V8's side; `c6e/c6e_v8_config.h` defines it for c6e_lib.dll.
+
+Contexts with scoped microtasks (Blink's pages, and any context created in Blink's isolate) require a `v8::MicrotasksScope` around every call into them from host code; V8 built with DCHECKs aborts without one. The generated code enters contexts with `v8::context_scope` (`fmtstream_v8.h`), a `v8::Context::Scope` with a `v8::microtasks_scope`; host code calling into such contexts on its own should do the same.
+
 
 
 ### Creating interface objects from Javascript
